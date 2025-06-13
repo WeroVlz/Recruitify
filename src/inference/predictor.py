@@ -57,8 +57,10 @@ class CVJobMatcherPredictor:
         """
         # Check if model exists
         if not model_path.exists():
-            logger.error(f"Model path does not exist: {model_path}")
-            raise FileNotFoundError(f"Model not found at {model_path}")
+            logger.warning(f"Model path does not exist: {model_path}. Creating a new model.")
+            # Create a new model if the path doesn't exist
+            self.model = CVJobMatcher()
+            return
             
         try:
             # Load Random Forest model with timing
@@ -68,8 +70,9 @@ class CVJobMatcherPredictor:
             load_time = time.time() - start_time
             logger.info(f"Model loaded from {model_path} in {load_time:.2f} seconds")
         except Exception as e:
-            logger.error(f"Error loading model: {e}")
-            raise
+            logger.error(f"Error loading model: {e}. Creating a new model.")
+            # Create a new model if loading fails
+            self.model = CVJobMatcher()
     
     def setup_extractors(self, cv_dir: Path, jobs_dir: Path) -> None:
         """

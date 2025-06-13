@@ -5,6 +5,7 @@ scikit-learn>=1.0.0
 tqdm>=4.62.0
 torch>=1.10.0  # Still needed for DataLoader
 joblib>=1.1.0  # For saving/loading Random Forest models
+nltk>=3.6.0    # For text processing
 
 # Data processing
 PyMuPDF>=1.19.0  # For PDF extraction
