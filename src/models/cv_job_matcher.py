@@ -163,10 +163,22 @@ class CVJobMatcher:
         pred_proba = self.classifier.predict_proba(X)[0]
         pred_class = self.classifier.predict(X)[0]
         
+        # Handle the case where only one class is present in training data
+        if len(pred_proba) == 1:
+            # If only one class is present, use the predicted class directly
+            # and set probability to either 0 or 1 based on the class
+            match_probability = 0.0
+            if self.classifier.classes_[0] == 1:
+                # If the only class is positive (1), set probability to 1
+                match_probability = 1.0
+        else:
+            # Normal case: extract probability of positive class (index 1)
+            match_probability = pred_proba[1]
+        
         return {
             "logits": pred_proba,
             "class": pred_class,
-            "match_probability": pred_proba[1]
+            "match_probability": match_probability
         }
     
     def predict_batch(self, cv_texts: List[str], job_texts: List[str]) -> Dict[str, np.ndarray]:
@@ -187,10 +199,22 @@ class CVJobMatcher:
         pred_proba = self.classifier.predict_proba(X)
         pred_class = self.classifier.predict(X)
         
+        # Handle the case where only one class is present in training data
+        if pred_proba.shape[1] == 1:
+            # If only one class is present, use the predicted class directly
+            # and set probability to either 0 or 1 based on the class
+            match_probability = np.zeros(len(pred_class))
+            if self.classifier.classes_[0] == 1:
+                # If the only class is positive (1), set all probabilities to 1
+                match_probability = np.ones(len(pred_class))
+        else:
+            # Normal case: extract probability of positive class (index 1)
+            match_probability = pred_proba[:, 1]
+        
         return {
             "logits": pred_proba,
             "class": pred_class,
-            "match_probability": pred_proba[:, 1]
+            "match_probability": match_probability
         }
     
     def get_similarity_score(self, cv_text: str, job_text: str) -> float:
