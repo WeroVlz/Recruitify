@@ -41,30 +41,42 @@ class CVJobMatcher:
             min_samples_split: Minimum samples required to split a node
             random_state: Random state for reproducibility
         """
-        # Initialize TF-IDF vectorizers for CV and job text
+        # Initialize TF-IDF vectorizers for CV and job text with improved parameters
         self.cv_vectorizer = TfidfVectorizer(
-            max_features=5000,
-            ngram_range=(1, 2),
+            max_features=10000,  # Increased from 5000 to capture more terms
+            ngram_range=(1, 3),  # Increased to include trigrams for better context
             stop_words=None,  # Don't use stopwords for Spanish
-            min_df=2,  # Ignore terms that appear in less than 2 documents
+            min_df=1,  # Reduced to capture rare but important terms
+            max_df=0.9,  # Ignore terms that appear in more than 90% of documents (too common)
             lowercase=True,
-            analyzer='word'
+            analyzer='word',
+            use_idf=True,  # Use inverse document frequency weighting
+            norm='l2',  # Normalize vectors
+            sublinear_tf=True  # Apply sublinear tf scaling (1+log(tf))
         )
         
         self.job_vectorizer = TfidfVectorizer(
-            max_features=5000,
-            ngram_range=(1, 2),
+            max_features=10000,  # Increased from 5000 to capture more terms
+            ngram_range=(1, 3),  # Increased to include trigrams for better context
             stop_words=None,  # Don't use stopwords for Spanish
-            min_df=2,  # Ignore terms that appear in less than 2 documents
+            min_df=1,  # Reduced to capture rare but important terms
+            max_df=0.9,  # Ignore terms that appear in more than 90% of documents (too common)
             lowercase=True,
-            analyzer='word'
+            analyzer='word',
+            use_idf=True,  # Use inverse document frequency weighting
+            norm='l2',  # Normalize vectors
+            sublinear_tf=True  # Apply sublinear tf scaling (1+log(tf))
         )
         
-        # Initialize Random Forest classifier
+        # Initialize Random Forest classifier with improved parameters
         self.classifier = RandomForestClassifier(
-            n_estimators=n_estimators,
+            n_estimators=200,  # Increased from default 100
             max_depth=max_depth,
             min_samples_split=min_samples_split,
+            min_samples_leaf=1,
+            max_features='sqrt',  # Use sqrt(n_features) for each tree
+            bootstrap=True,
+            class_weight='balanced',  # Handle imbalanced classes
             random_state=random_state,
             n_jobs=-1  # Use all available cores
         )
