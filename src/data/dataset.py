@@ -63,11 +63,7 @@ class CVJobDataset(Dataset):
         Returns:
             Filtered DataFrame
         """
-        # Map candidateId to cv_id and jobId to job_id for compatibility
-        self.applications_df = self.applications_df.rename(columns={
-            'candidateId': 'cv_id',
-            'jobId': 'job_id'
-        })
+        # The columns are already renamed in the create_dataloaders function
         
         valid_cv_ids = {cv_id for cv_id, data in self.cv_data.items() if data["success"]}
         valid_job_ids = {job_id for job_id, data in self.job_data.items() if data["success"]}
@@ -175,6 +171,12 @@ def create_dataloaders(
     # Process CVs and jobs
     cv_extractor = CVExtractor(cv_dir)
     job_extractor = JobExtractor(jobs_dir)
+    
+    # Rename columns for compatibility
+    applications_df = applications_df.rename(columns={
+        'candidateId': 'cv_id',
+        'jobId': 'job_id'
+    })
     
     # Get unique CV and job IDs from applications
     unique_cv_ids = applications_df['cv_id'].unique().tolist()
