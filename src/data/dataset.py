@@ -63,6 +63,12 @@ class CVJobDataset(Dataset):
         Returns:
             Filtered DataFrame
         """
+        # Map candidateId to cv_id and jobId to job_id for compatibility
+        self.applications_df = self.applications_df.rename(columns={
+            'candidateId': 'cv_id',
+            'jobId': 'job_id'
+        })
+        
         valid_cv_ids = {cv_id for cv_id, data in self.cv_data.items() if data["success"]}
         valid_job_ids = {job_id for job_id, data in self.job_data.items() if data["success"]}
         
@@ -71,20 +77,20 @@ class CVJobDataset(Dataset):
             self.applications_df["job_id"].isin(valid_job_ids)
         ].copy()
         
-        # Convert status to binary label (1 for match, 0 for no match)
-        # Assuming 'status' column has values like 'hired', 'rejected', etc.
-        if 'status' in filtered_df.columns:
+        # Convert applicationStatus to binary label (1 for match, 0 for no match)
+        if 'applicationStatus' in filtered_df.columns:
             # This mapping should be adjusted based on the actual status values
             status_mapping = {
-                'hired': 1,
-                'accepted': 1,
-                'matched': 1,
-                'rejected': 0,
-                'not_matched': 0
+                'HIRED': 1,
+                'ACCEPTED': 1,
+                'MATCHED': 1,
+                'REJECTED': 0,
+                'NOT_MATCHED': 0,
+                'PENDING': 0
             }
             
-            filtered_df['label'] = filtered_df['status'].map(
-                lambda x: status_mapping.get(x.lower(), 0) if isinstance(x, str) else 0
+            filtered_df['label'] = filtered_df['applicationStatus'].map(
+                lambda x: status_mapping.get(x.upper(), 0) if isinstance(x, str) else 0
             )
         
         return filtered_df
@@ -113,6 +119,7 @@ class CVJobDataset(Dataset):
         
         # Create sample
         sample = {
+            'application_id': application.get('applicationId', ''),
             'cv_id': cv_id,
             'job_id': job_id,
             'cv_text': cv_text,
@@ -161,6 +168,9 @@ def create_dataloaders(
     """
     # Load applications data
     applications_df = pd.read_parquet(applications_file)
+    
+    # Log the column names for debugging
+    logger.info(f"Applications file columns: {applications_df.columns.tolist()}")
     
     # Process CVs and jobs
     cv_extractor = CVExtractor(cv_dir)
