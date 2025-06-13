@@ -192,12 +192,22 @@ class CVJobMatcher:
         Returns:
             Dictionary with prediction results
         """
+        import time
+        
         # Extract features
+        feature_start = time.time()
         X = self.extract_batch_features(cv_texts, job_texts)
+        feature_time = time.time() - feature_start
         
         # Predict
+        predict_start = time.time()
         pred_proba = self.classifier.predict_proba(X)
         pred_class = self.classifier.predict(X)
+        predict_time = time.time() - predict_start
+        
+        # Log performance metrics for large batches
+        if len(cv_texts) > 100:
+            logger.info(f"Batch prediction performance - Features: {feature_time:.2f}s, Prediction: {predict_time:.2f}s for {len(cv_texts)} samples")
         
         # Handle the case where only one class is present in training data
         if pred_proba.shape[1] == 1:
@@ -268,9 +278,13 @@ class CVJobMatcher:
         Returns:
             Loaded model
         """
+        import time
+        
         # Load config
+        config_start = time.time()
         with open(path / "config.pkl", "rb") as f:
             config = pickle.load(f)
+        config_time = time.time() - config_start
         
         # Create instance
         instance = cls(
@@ -282,16 +296,23 @@ class CVJobMatcher:
         )
         
         # Load vectorizers
+        vec_start = time.time()
         with open(path / "cv_vectorizer.pkl", "rb") as f:
             instance.cv_vectorizer = pickle.load(f)
         
         with open(path / "job_vectorizer.pkl", "rb") as f:
             instance.job_vectorizer = pickle.load(f)
+        vec_time = time.time() - vec_start
         
         # Load classifier
+        clf_start = time.time()
         instance.classifier = joblib.load(path / "classifier.joblib")
+        clf_time = time.time() - clf_start
         
         # Set vectorizers as fitted
         instance.vectorizers_fitted = True
+        
+        # Log loading times
+        logger.info(f"Model loading times - Config: {config_time:.2f}s, Vectorizers: {vec_time:.2f}s, Classifier: {clf_time:.2f}s")
         
         return instance

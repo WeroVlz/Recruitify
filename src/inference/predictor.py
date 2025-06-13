@@ -55,9 +55,21 @@ class CVJobMatcherPredictor:
         Args:
             model_path: Path to load the model from
         """
-        # Load Random Forest model
-        self.model = CVJobMatcher.load(model_path)
-        logger.info(f"Model loaded from {model_path}")
+        # Check if model exists
+        if not model_path.exists():
+            logger.error(f"Model path does not exist: {model_path}")
+            raise FileNotFoundError(f"Model not found at {model_path}")
+            
+        try:
+            # Load Random Forest model with timing
+            import time
+            start_time = time.time()
+            self.model = CVJobMatcher.load(model_path)
+            load_time = time.time() - start_time
+            logger.info(f"Model loaded from {model_path} in {load_time:.2f} seconds")
+        except Exception as e:
+            logger.error(f"Error loading model: {e}")
+            raise
     
     def setup_extractors(self, cv_dir: Path, jobs_dir: Path) -> None:
         """
@@ -91,14 +103,23 @@ class CVJobMatcherPredictor:
         Returns:
             Dictionary with match probability and score
         """
-        # Get prediction from Random Forest model
-        result = self.model.predict(cv_text, job_text)
-        match_prob = result["match_probability"]
-        
-        return {
-            'match_probability': match_prob,
-            'match_score': match_prob * 100  # Score as percentage
-        }
+        try:
+            # Get prediction from Random Forest model
+            result = self.model.predict(cv_text, job_text)
+            match_prob = result["match_probability"]
+            
+            return {
+                'match_probability': match_prob,
+                'match_score': match_prob * 100  # Score as percentage
+            }
+        except Exception as e:
+            logger.error(f"Error during prediction: {e}")
+            # Return a default value in case of error
+            return {
+                'match_probability': 0.0,
+                'match_score': 0.0,
+                'error': str(e)
+            }
     
     def predict_match_by_id(
         self,
@@ -158,33 +179,48 @@ class CVJobMatcherPredictor:
         Returns:
             List of dictionaries with match results, sorted by score
         """
+        import time
+        start_time = time.time()
+        
         if self.cv_extractor is None or self.job_extractor is None:
             raise ValueError("Extractors not set up. Call setup_extractors first.")
         
         # Process CV
+        cv_process_start = time.time()
         cv_data = self.cv_extractor.process_cv(cv_id)
+        cv_process_time = time.time() - cv_process_start
+        logger.info(f"CV processing time: {cv_process_time:.2f} seconds")
         
         if not cv_data['success']:
             logger.warning(f"Failed to process CV {cv_id}")
             return []
         
-        # Process jobs and predict matches
+        # Process jobs and predict matches in batches for better performance
         results = []
-        for job_id in job_ids:
-            job_data = self.job_extractor.process_job(job_id)
+        batch_size = 10  # Process jobs in batches of 10
+        
+        for i in range(0, len(job_ids), batch_size):
+            batch_job_ids = job_ids[i:i+batch_size]
+            batch_start = time.time()
             
-            if not job_data['success']:
-                logger.warning(f"Failed to process job {job_id}")
-                continue
+            # Process jobs in current batch
+            batch_job_data = {}
+            for job_id in batch_job_ids:
+                job_data = self.job_extractor.process_job(job_id)
+                if job_data['success']:
+                    batch_job_data[job_id] = job_data
+                else:
+                    logger.warning(f"Failed to process job {job_id}")
             
-            # Predict match
-            result = self.predict_match(cv_data['text'], job_data['text'])
+            # Predict matches for current batch
+            for job_id, job_data in batch_job_data.items():
+                result = self.predict_match(cv_data['text'], job_data['text'])
+                result['cv_id'] = cv_id
+                result['job_id'] = job_id
+                results.append(result)
             
-            # Add IDs to result
-            result['cv_id'] = cv_id
-            result['job_id'] = job_id
-            
-            results.append(result)
+            batch_time = time.time() - batch_start
+            logger.info(f"Processed batch of {len(batch_job_ids)} jobs in {batch_time:.2f} seconds")
         
         # Sort by match probability (descending)
         results.sort(key=lambda x: x['match_probability'], reverse=True)
@@ -192,6 +228,9 @@ class CVJobMatcherPredictor:
         # Return top k if specified
         if top_k is not None:
             results = results[:top_k]
+        
+        total_time = time.time() - start_time
+        logger.info(f"Total prediction time for {len(job_ids)} jobs: {total_time:.2f} seconds")
         
         return results
     

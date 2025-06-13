@@ -172,18 +172,24 @@ def main():
         logger.info(f"Finding top 5 matching jobs for CV {args.cv_id}...")
         
         # Get all available job IDs
+        import time
+        start_time = time.time()
         job_ids = [f.stem for f in Path(args.jobs_dir).glob("*.html")]
         
         if not job_ids:
             logger.error(f"No job files found in {args.jobs_dir}")
             return
         
+        logger.info(f"Found {len(job_ids)} job files in {time.time() - start_time:.2f} seconds")
+        
         # Predict matches for all jobs
+        predict_start = time.time()
         results = predictor.predict_matches_for_cv(
             cv_id=args.cv_id,
             job_ids=job_ids,
             top_k=5  # Get top 5 matches
         )
+        logger.info(f"Prediction completed in {time.time() - predict_start:.2f} seconds")
         
         # Print results
         print(f"Top 5 job recommendations for CV {args.cv_id}:")
