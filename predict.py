@@ -42,10 +42,12 @@ def parse_args():
                       help="Predict matches for a job against multiple CVs")
     group.add_argument("--batch-predict", action="store_true",
                       help="Predict matches for multiple CV-job pairs from a file")
+    group.add_argument("--recommend-jobs", action="store_true",
+                      help="Recommend top 5 matching jobs for a CV")
     
-    # Arguments for --predict-pair
+    # Arguments for --predict-pair and --recommend-jobs
     parser.add_argument("--cv-id", type=str,
-                        help="ID of the CV (for --predict-pair or --predict-cv)")
+                        help="ID of the CV (for --predict-pair, --predict-cv, or --recommend-jobs)")
     parser.add_argument("--job-id", type=str,
                         help="ID of the job (for --predict-pair or --predict-job)")
     
@@ -162,6 +164,35 @@ def main():
         avg_score = results_df['match_score'].mean()
         print(f"Processed {len(results_df)} pairs with average match score: {avg_score:.2f}%")
         print(f"Results saved to {args.output_file}")
+        
+    elif args.recommend_jobs:
+        if not args.cv_id:
+            raise ValueError("--cv-id is required for --recommend-jobs")
+        
+        logger.info(f"Finding top 5 matching jobs for CV {args.cv_id}...")
+        
+        # Get all available job IDs
+        job_ids = [f.stem for f in Path(args.jobs_dir).glob("*.html")]
+        
+        if not job_ids:
+            logger.error(f"No job files found in {args.jobs_dir}")
+            return
+        
+        # Predict matches for all jobs
+        results = predictor.predict_matches_for_cv(
+            cv_id=args.cv_id,
+            job_ids=job_ids,
+            top_k=5  # Get top 5 matches
+        )
+        
+        # Print results
+        print(f"Top 5 job recommendations for CV {args.cv_id}:")
+        for i, result in enumerate(results):
+            print(f"{i+1}. Job {result['job_id']}: {result['match_score']:.2f}% match")
+        
+        # Save results
+        pd.DataFrame(results).to_csv(args.output_file, index=False)
+        logger.info(f"Results saved to {args.output_file}")
 
 if __name__ == "__main__":
     main()
