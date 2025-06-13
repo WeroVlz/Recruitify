@@ -1,152 +1,273 @@
 """
-Model for CV-Job matching using transformer-based encoders.
+Model for CV-Job matching using Random Forest.
 """
 
-import torch
-import torch.nn as nn
-from transformers import AutoModel
-from typing import Dict, Tuple
+import numpy as np
+import pickle
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from typing import Dict, List, Union, Tuple, Any
+import joblib
+import os
+from pathlib import Path
 
-class CVJobMatcher(nn.Module):
+class CVJobMatcher:
     """
-    Model for matching CVs with job postings using transformer encoders.
+    Model for matching CVs with job postings using Random Forest.
     """
     
     def __init__(
         self,
-        model_name: str,
-        hidden_dim: int,
+        model_name: str = None,  # Kept for compatibility
+        hidden_dim: int = None,  # Kept for compatibility
         num_classes: int = 2,
-        dropout_rate: float = 0.1
+        n_estimators: int = 100,
+        max_depth: int = None,
+        min_samples_split: int = 2,
+        random_state: int = 42
     ):
         """
         Initialize the CV-Job matcher model.
         
         Args:
-            model_name: Name of the pre-trained transformer model
-            hidden_dim: Dimension of hidden layers
+            model_name: Not used, kept for compatibility
+            hidden_dim: Not used, kept for compatibility
             num_classes: Number of output classes (typically 2 for match/no-match)
-            dropout_rate: Dropout rate for regularization
+            n_estimators: Number of trees in the forest
+            max_depth: Maximum depth of the trees
+            min_samples_split: Minimum samples required to split a node
+            random_state: Random state for reproducibility
         """
-        super(CVJobMatcher, self).__init__()
-        
-        # Load pre-trained transformer model for Spanish
-        self.transformer = AutoModel.from_pretrained(model_name)
-        
-        # Get the embedding dimension from the transformer model
-        self.embedding_dim = self.transformer.config.hidden_size
-        
-        # CV encoder
-        self.cv_encoder = nn.Sequential(
-            nn.Linear(self.embedding_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate)
+        # Initialize TF-IDF vectorizers for CV and job text
+        self.cv_vectorizer = TfidfVectorizer(
+            max_features=5000,
+            ngram_range=(1, 2),
+            stop_words='english'  # Should be replaced with Spanish stopwords
         )
         
-        # Job encoder
-        self.job_encoder = nn.Sequential(
-            nn.Linear(self.embedding_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate)
+        self.job_vectorizer = TfidfVectorizer(
+            max_features=5000,
+            ngram_range=(1, 2),
+            stop_words='english'  # Should be replaced with Spanish stopwords
         )
         
-        # Classifier for the combined features
-        self.classifier = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(hidden_dim, num_classes)
-        )
-    
-    def encode_text(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-        """
-        Encode text using the transformer model.
-        
-        Args:
-            input_ids: Input token IDs
-            attention_mask: Attention mask
-            
-        Returns:
-            Text embedding
-        """
-        # Get transformer outputs
-        outputs = self.transformer(
-            input_ids=input_ids,
-            attention_mask=attention_mask
+        # Initialize Random Forest classifier
+        self.classifier = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            min_samples_split=min_samples_split,
+            random_state=random_state,
+            n_jobs=-1  # Use all available cores
         )
         
-        # Use the [CLS] token embedding as the text representation
-        return outputs.last_hidden_state[:, 0, :]
-    
-    def forward(
-        self,
-        cv_input_ids: torch.Tensor,
-        cv_attention_mask: torch.Tensor,
-        job_input_ids: torch.Tensor,
-        job_attention_mask: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
-        """
-        Forward pass of the model.
+        # Flag to check if vectorizers are fitted
+        self.vectorizers_fitted = False
         
-        Args:
-            cv_input_ids: Input token IDs for CVs
-            cv_attention_mask: Attention mask for CVs
-            job_input_ids: Input token IDs for jobs
-            job_attention_mask: Attention mask for jobs
-            
-        Returns:
-            Dictionary with model outputs
-        """
-        # Encode CV and job
-        cv_embedding = self.encode_text(cv_input_ids, cv_attention_mask)
-        job_embedding = self.encode_text(job_input_ids, job_attention_mask)
-        
-        # Apply CV and job encoders
-        cv_features = self.cv_encoder(cv_embedding)
-        job_features = self.job_encoder(job_embedding)
-        
-        # Concatenate features
-        combined_features = torch.cat([cv_features, job_features], dim=1)
-        
-        # Classify
-        logits = self.classifier(combined_features)
-        
-        return {
-            "logits": logits,
-            "cv_embedding": cv_embedding,
-            "job_embedding": job_embedding,
-            "cv_features": cv_features,
-            "job_features": job_features
+        # Store configuration
+        self.config = {
+            'n_estimators': n_estimators,
+            'max_depth': max_depth,
+            'min_samples_split': min_samples_split,
+            'random_state': random_state,
+            'num_classes': num_classes
         }
     
-    def get_similarity_score(
-        self,
-        cv_input_ids: torch.Tensor,
-        cv_attention_mask: torch.Tensor,
-        job_input_ids: torch.Tensor,
-        job_attention_mask: torch.Tensor
-    ) -> torch.Tensor:
+    def fit_vectorizers(self, cv_texts: List[str], job_texts: List[str]) -> None:
+        """
+        Fit TF-IDF vectorizers on CV and job texts.
+        
+        Args:
+            cv_texts: List of CV texts
+            job_texts: List of job texts
+        """
+        self.cv_vectorizer.fit(cv_texts)
+        self.job_vectorizer.fit(job_texts)
+        self.vectorizers_fitted = True
+    
+    def extract_features(self, cv_text: str, job_text: str) -> np.ndarray:
+        """
+        Extract features from CV and job texts.
+        
+        Args:
+            cv_text: CV text
+            job_text: Job text
+            
+        Returns:
+            Feature vector
+        """
+        if not self.vectorizers_fitted:
+            raise ValueError("Vectorizers not fitted. Call fit_vectorizers first.")
+        
+        # Transform texts to TF-IDF vectors
+        cv_vector = self.cv_vectorizer.transform([cv_text]).toarray()
+        job_vector = self.job_vectorizer.transform([job_text]).toarray()
+        
+        # Concatenate vectors
+        return np.hstack((cv_vector, job_vector))
+    
+    def extract_batch_features(self, cv_texts: List[str], job_texts: List[str]) -> np.ndarray:
+        """
+        Extract features from batches of CV and job texts.
+        
+        Args:
+            cv_texts: List of CV texts
+            job_texts: List of job texts
+            
+        Returns:
+            Feature matrix
+        """
+        if not self.vectorizers_fitted:
+            raise ValueError("Vectorizers not fitted. Call fit_vectorizers first.")
+        
+        # Transform texts to TF-IDF vectors
+        cv_vectors = self.cv_vectorizer.transform(cv_texts).toarray()
+        job_vectors = self.job_vectorizer.transform(job_texts).toarray()
+        
+        # Concatenate vectors
+        return np.hstack((cv_vectors, job_vectors))
+    
+    def fit(self, cv_texts: List[str], job_texts: List[str], labels: List[int]) -> None:
+        """
+        Fit the model on CV and job texts.
+        
+        Args:
+            cv_texts: List of CV texts
+            job_texts: List of job texts
+            labels: List of labels (0 for no match, 1 for match)
+        """
+        # Fit vectorizers if not already fitted
+        if not self.vectorizers_fitted:
+            self.fit_vectorizers(cv_texts, job_texts)
+        
+        # Extract features
+        X = self.extract_batch_features(cv_texts, job_texts)
+        
+        # Fit classifier
+        self.classifier.fit(X, labels)
+    
+    def predict(self, cv_text: str, job_text: str) -> Dict[str, Any]:
+        """
+        Predict match between CV and job.
+        
+        Args:
+            cv_text: CV text
+            job_text: Job text
+            
+        Returns:
+            Dictionary with prediction results
+        """
+        # Extract features
+        X = self.extract_features(cv_text, job_text)
+        
+        # Predict
+        pred_proba = self.classifier.predict_proba(X)[0]
+        pred_class = self.classifier.predict(X)[0]
+        
+        return {
+            "logits": pred_proba,
+            "class": pred_class,
+            "match_probability": pred_proba[1]
+        }
+    
+    def predict_batch(self, cv_texts: List[str], job_texts: List[str]) -> Dict[str, np.ndarray]:
+        """
+        Predict matches for batches of CV and job texts.
+        
+        Args:
+            cv_texts: List of CV texts
+            job_texts: List of job texts
+            
+        Returns:
+            Dictionary with prediction results
+        """
+        # Extract features
+        X = self.extract_batch_features(cv_texts, job_texts)
+        
+        # Predict
+        pred_proba = self.classifier.predict_proba(X)
+        pred_class = self.classifier.predict(X)
+        
+        return {
+            "logits": pred_proba,
+            "class": pred_class,
+            "match_probability": pred_proba[:, 1]
+        }
+    
+    def get_similarity_score(self, cv_text: str, job_text: str) -> float:
         """
         Calculate similarity score between CV and job.
         
         Args:
-            cv_input_ids: Input token IDs for CVs
-            cv_attention_mask: Attention mask for CVs
-            job_input_ids: Input token IDs for jobs
-            job_attention_mask: Attention mask for jobs
+            cv_text: CV text
+            job_text: Job text
             
         Returns:
-            Similarity scores
+            Similarity score
         """
-        outputs = self.forward(
-            cv_input_ids=cv_input_ids,
-            cv_attention_mask=cv_attention_mask,
-            job_input_ids=job_input_ids,
-            job_attention_mask=job_attention_mask
-        )
-        
-        # Apply softmax to get probabilities
-        probs = torch.softmax(outputs["logits"], dim=1)
+        # Predict
+        result = self.predict(cv_text, job_text)
         
         # Return probability of match (class 1)
-        return probs[:, 1]
+        return result["match_probability"]
+    
+    def save(self, path: Path) -> None:
+        """
+        Save the model to a directory.
+        
+        Args:
+            path: Directory path to save the model
+        """
+        os.makedirs(path, exist_ok=True)
+        
+        # Save vectorizers
+        with open(path / "cv_vectorizer.pkl", "wb") as f:
+            pickle.dump(self.cv_vectorizer, f)
+        
+        with open(path / "job_vectorizer.pkl", "wb") as f:
+            pickle.dump(self.job_vectorizer, f)
+        
+        # Save classifier
+        joblib.dump(self.classifier, path / "classifier.joblib")
+        
+        # Save config
+        with open(path / "config.pkl", "wb") as f:
+            pickle.dump(self.config, f)
+    
+    @classmethod
+    def load(cls, path: Path) -> 'CVJobMatcher':
+        """
+        Load the model from a directory.
+        
+        Args:
+            path: Directory path to load the model from
+            
+        Returns:
+            Loaded model
+        """
+        # Load config
+        with open(path / "config.pkl", "rb") as f:
+            config = pickle.load(f)
+        
+        # Create instance
+        instance = cls(
+            n_estimators=config['n_estimators'],
+            max_depth=config['max_depth'],
+            min_samples_split=config['min_samples_split'],
+            random_state=config['random_state'],
+            num_classes=config['num_classes']
+        )
+        
+        # Load vectorizers
+        with open(path / "cv_vectorizer.pkl", "rb") as f:
+            instance.cv_vectorizer = pickle.load(f)
+        
+        with open(path / "job_vectorizer.pkl", "rb") as f:
+            instance.job_vectorizer = pickle.load(f)
+        
+        # Load classifier
+        instance.classifier = joblib.load(path / "classifier.joblib")
+        
+        # Set vectorizers as fitted
+        instance.vectorizers_fitted = True
+        
+        return instance

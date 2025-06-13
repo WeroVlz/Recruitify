@@ -94,13 +94,13 @@ python predict.py --batch-predict --pairs-file pairs.csv --output-file results.c
 
 ## Model Architecture
 
-The system uses a dual-encoder architecture with a shared transformer backbone:
+The system uses a Random Forest classifier with TF-IDF vectorization:
 
-1. CV Encoder: Processes CV text and extracts features
-2. Job Encoder: Processes job posting text and extracts features
-3. Classifier: Combines features from both encoders to predict match probability
+1. CV Vectorizer: Converts CV text to TF-IDF features
+2. Job Vectorizer: Converts job posting text to TF-IDF features
+3. Random Forest Classifier: Predicts match probability based on combined features
 
-The model is based on a pre-trained Spanish language model (RoBERTa-BNE) and fine-tuned on the CV-job matching task.
+This approach provides excellent performance for text classification tasks while being more computationally efficient than deep learning models.
 
 ## Data Processing
 

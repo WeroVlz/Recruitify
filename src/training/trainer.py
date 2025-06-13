@@ -1,24 +1,19 @@
 """
-Trainer for CV-Job matching model.
+Trainer for CV-Job matching model using Random Forest.
 """
 
 import os
 import logging
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from transformers import get_linear_schedule_with_warmup
-from tqdm import tqdm
 import numpy as np
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
 from src.models.cv_job_matcher import CVJobMatcher
 from src.config import (
-    LEARNING_RATE, EPOCHS, WARMUP_STEPS, WEIGHT_DECAY,
-    GRADIENT_ACCUMULATION_STEPS, EVALUATION_STRATEGY, EVAL_STEPS, SAVE_STEPS
+    EPOCHS, EVALUATION_STRATEGY, EVAL_STEPS, SAVE_STEPS
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -33,11 +28,11 @@ class CVJobMatcherTrainer:
         train_dataloader: DataLoader,
         val_dataloader: DataLoader,
         test_dataloader: Optional[DataLoader] = None,
-        learning_rate: float = LEARNING_RATE,
-        weight_decay: float = WEIGHT_DECAY,
-        warmup_steps: int = WARMUP_STEPS,
-        gradient_accumulation_steps: int = GRADIENT_ACCUMULATION_STEPS,
-        device: str = None
+        learning_rate: float = None,  # Not used with Random Forest but kept for compatibility
+        weight_decay: float = None,   # Not used with Random Forest but kept for compatibility
+        warmup_steps: int = None,     # Not used with Random Forest but kept for compatibility
+        gradient_accumulation_steps: int = None,  # Not used with Random Forest but kept for compatibility
+        device: str = None            # Not used with Random Forest but kept for compatibility
     ):
         """
         Initialize the trainer.
@@ -47,41 +42,18 @@ class CVJobMatcherTrainer:
             train_dataloader: Training data loader
             val_dataloader: Validation data loader
             test_dataloader: Test data loader
-            learning_rate: Learning rate for optimizer
-            weight_decay: Weight decay for optimizer
-            warmup_steps: Number of warmup steps for scheduler
-            gradient_accumulation_steps: Number of steps to accumulate gradients
-            device: Device to use for training (cpu or cuda)
+            learning_rate: Not used with Random Forest
+            weight_decay: Not used with Random Forest
+            warmup_steps: Not used with Random Forest
+            gradient_accumulation_steps: Not used with Random Forest
+            device: Not used with Random Forest
         """
         self.model = model
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
         
-        # Set device
-        self.device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
-        
-        # Set optimizer and loss function
-        self.optimizer = optim.AdamW(
-            model.parameters(),
-            lr=learning_rate,
-            weight_decay=weight_decay
-        )
-        
-        # Set scheduler
-        total_steps = len(train_dataloader) * EPOCHS // gradient_accumulation_steps
-        self.scheduler = get_linear_schedule_with_warmup(
-            self.optimizer,
-            num_warmup_steps=warmup_steps,
-            num_training_steps=total_steps
-        )
-        
-        # Set loss function
-        self.criterion = nn.CrossEntropyLoss()
-        
         # Training parameters
-        self.gradient_accumulation_steps = gradient_accumulation_steps
         self.global_step = 0
         self.best_val_f1 = 0.0
     
@@ -97,7 +69,7 @@ class CVJobMatcherTrainer:
         Train the model.
         
         Args:
-            epochs: Number of training epochs
+            epochs: Number of training epochs (only 1 is needed for Random Forest)
             evaluation_strategy: Strategy for evaluation ('steps' or 'epoch')
             eval_steps: Number of steps between evaluations if strategy is 'steps'
             save_steps: Number of steps between model saves
@@ -112,8 +84,6 @@ class CVJobMatcherTrainer:
         
         # Initialize training history
         history = {
-            'train_loss': [],
-            'val_loss': [],
             'val_accuracy': [],
             'val_precision': [],
             'val_recall': [],
@@ -121,38 +91,47 @@ class CVJobMatcherTrainer:
             'val_auc': []
         }
         
-        # Training loop
-        for epoch in range(epochs):
-            logger.info(f"Starting epoch {epoch + 1}/{epochs}")
-            
-            # Train for one epoch
-            train_loss = self._train_epoch()
-            history['train_loss'].append(train_loss)
-            
-            # Evaluate if strategy is 'epoch'
-            if evaluation_strategy == 'epoch':
-                val_metrics = self.evaluate(self.val_dataloader)
-                
-                # Update history
-                for key, value in val_metrics.items():
-                    history[f'val_{key}'].append(value)
-                
-                # Log metrics
-                logger.info(f"Epoch {epoch + 1}/{epochs} - "
-                           f"Train Loss: {train_loss:.4f}, "
-                           f"Val Loss: {val_metrics['loss']:.4f}, "
-                           f"Val F1: {val_metrics['f1']:.4f}")
-                
-                # Save best model
-                if val_metrics['f1'] > self.best_val_f1:
-                    self.best_val_f1 = val_metrics['f1']
-                    if output_dir:
-                        self.save_model(output_dir / "best_model")
-                        logger.info(f"Saved best model with F1: {self.best_val_f1:.4f}")
-            
-            # Save checkpoint
-            if output_dir:
-                self.save_model(output_dir / f"checkpoint-epoch-{epoch + 1}")
+        logger.info("Collecting training data...")
+        
+        # Collect all training data
+        cv_texts = []
+        job_texts = []
+        labels = []
+        
+        for batch in tqdm(self.train_dataloader, desc="Processing training data"):
+            cv_texts.extend(batch['cv_text'])
+            job_texts.extend(batch['job_text'])
+            labels.extend(batch['label'].numpy())
+        
+        # Fit vectorizers
+        logger.info("Fitting vectorizers...")
+        self.model.fit_vectorizers(cv_texts, job_texts)
+        
+        # Train the model
+        logger.info("Training Random Forest model...")
+        self.model.fit(cv_texts, job_texts, labels)
+        
+        # Evaluate on validation set
+        logger.info("Evaluating on validation set...")
+        val_metrics = self.evaluate(self.val_dataloader)
+        
+        # Update history
+        for key, value in val_metrics.items():
+            if key in history:
+                history[key].append(value)
+        
+        # Log metrics
+        logger.info(f"Validation metrics - "
+                   f"Accuracy: {val_metrics['accuracy']:.4f}, "
+                   f"Precision: {val_metrics['precision']:.4f}, "
+                   f"Recall: {val_metrics['recall']:.4f}, "
+                   f"F1: {val_metrics['f1']:.4f}, "
+                   f"AUC: {val_metrics['auc']:.4f}")
+        
+        # Save model
+        if output_dir:
+            self.model.save(output_dir / "best_model")
+            logger.info(f"Model saved to {output_dir / 'best_model'}")
         
         # Final evaluation on test set
         if self.test_dataloader:
@@ -161,7 +140,6 @@ class CVJobMatcherTrainer:
             
             # Log test metrics
             logger.info(f"Test metrics - "
-                       f"Loss: {test_metrics['loss']:.4f}, "
                        f"Accuracy: {test_metrics['accuracy']:.4f}, "
                        f"Precision: {test_metrics['precision']:.4f}, "
                        f"Recall: {test_metrics['recall']:.4f}, "
@@ -169,71 +147,6 @@ class CVJobMatcherTrainer:
                        f"AUC: {test_metrics['auc']:.4f}")
         
         return history
-    
-    def _train_epoch(self) -> float:
-        """
-        Train for one epoch.
-        
-        Returns:
-            Average training loss for the epoch
-        """
-        self.model.train()
-        total_loss = 0
-        
-        # Progress bar
-        progress_bar = tqdm(self.train_dataloader, desc="Training")
-        
-        for step, batch in enumerate(progress_bar):
-            # Move batch to device
-            batch = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
-            
-            # Forward pass
-            outputs = self.model(
-                cv_input_ids=batch['cv_input_ids'],
-                cv_attention_mask=batch['cv_attention_mask'],
-                job_input_ids=batch['job_input_ids'],
-                job_attention_mask=batch['job_attention_mask']
-            )
-            
-            # Calculate loss
-            loss = self.criterion(outputs['logits'], batch['label'])
-            
-            # Scale loss for gradient accumulation
-            loss = loss / self.gradient_accumulation_steps
-            
-            # Backward pass
-            loss.backward()
-            
-            # Update weights if gradient accumulation steps reached
-            if (step + 1) % self.gradient_accumulation_steps == 0:
-                self.optimizer.step()
-                self.scheduler.step()
-                self.optimizer.zero_grad()
-                self.global_step += 1
-            
-            # Update progress bar
-            total_loss += loss.item() * self.gradient_accumulation_steps
-            progress_bar.set_postfix({'loss': total_loss / (step + 1)})
-            
-            # Evaluate if strategy is 'steps'
-            if (self.global_step % EVAL_STEPS == 0 and 
-                self.global_step > 0 and 
-                EVALUATION_STRATEGY == 'steps'):
-                
-                val_metrics = self.evaluate(self.val_dataloader)
-                
-                # Log metrics
-                logger.info(f"Step {self.global_step} - "
-                           f"Val Loss: {val_metrics['loss']:.4f}, "
-                           f"Val F1: {val_metrics['f1']:.4f}")
-                
-                # Return to training mode
-                self.model.train()
-        
-        # Calculate average loss
-        avg_loss = total_loss / len(self.train_dataloader)
-        
-        return avg_loss
     
     def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
         """
@@ -245,38 +158,23 @@ class CVJobMatcherTrainer:
         Returns:
             Dictionary with evaluation metrics
         """
-        self.model.eval()
-        
         all_labels = []
         all_preds = []
         all_probs = []
-        total_loss = 0
         
-        with torch.no_grad():
-            for batch in tqdm(dataloader, desc="Evaluating"):
-                # Move batch to device
-                batch = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
-                
-                # Forward pass
-                outputs = self.model(
-                    cv_input_ids=batch['cv_input_ids'],
-                    cv_attention_mask=batch['cv_attention_mask'],
-                    job_input_ids=batch['job_input_ids'],
-                    job_attention_mask=batch['job_attention_mask']
-                )
-                
-                # Calculate loss
-                loss = self.criterion(outputs['logits'], batch['label'])
-                total_loss += loss.item()
-                
-                # Get predictions
-                probs = torch.softmax(outputs['logits'], dim=1)
-                preds = torch.argmax(probs, dim=1)
-                
-                # Collect predictions and labels
-                all_labels.extend(batch['label'].cpu().numpy())
-                all_preds.extend(preds.cpu().numpy())
-                all_probs.extend(probs[:, 1].cpu().numpy())  # Probability of positive class
+        # Collect all evaluation data
+        cv_texts = []
+        job_texts = []
+        
+        for batch in tqdm(dataloader, desc="Processing evaluation data"):
+            cv_texts.extend(batch['cv_text'])
+            job_texts.extend(batch['job_text'])
+            all_labels.extend(batch['label'].numpy())
+        
+        # Predict
+        results = self.model.predict_batch(cv_texts, job_texts)
+        all_preds = results['class']
+        all_probs = results['match_probability']
         
         # Calculate metrics
         all_labels = np.array(all_labels)
@@ -284,7 +182,6 @@ class CVJobMatcherTrainer:
         all_probs = np.array(all_probs)
         
         metrics = {
-            'loss': total_loss / len(dataloader),
             'accuracy': accuracy_score(all_labels, all_preds),
             'precision': precision_score(all_labels, all_preds, zero_division=0),
             'recall': recall_score(all_labels, all_preds, zero_division=0),
@@ -296,26 +193,12 @@ class CVJobMatcherTrainer:
     
     def save_model(self, path: Path) -> None:
         """
-        Save the model and tokenizer.
+        Save the model.
         
         Args:
             path: Path to save the model
         """
-        os.makedirs(path, exist_ok=True)
-        
-        # Save model state dict
-        torch.save(self.model.state_dict(), path / "model.pt")
-        
-        # Save config
-        model_config = {
-            'model_name': self.model.transformer.config._name_or_path,
-            'hidden_dim': self.model.cv_encoder[0].out_features,
-            'num_classes': self.model.classifier[-1].out_features,
-            'dropout_rate': self.model.cv_encoder[2].p
-        }
-        
-        torch.save(model_config, path / "config.pt")
-        
+        self.model.save(path)
         logger.info(f"Model saved to {path}")
     
     def load_model(self, path: Path) -> None:
@@ -325,19 +208,5 @@ class CVJobMatcherTrainer:
         Args:
             path: Path to load the model from
         """
-        # Load config
-        model_config = torch.load(path / "config.pt")
-        
-        # Recreate model with the same config
-        self.model = CVJobMatcher(
-            model_name=model_config['model_name'],
-            hidden_dim=model_config['hidden_dim'],
-            num_classes=model_config['num_classes'],
-            dropout_rate=model_config['dropout_rate']
-        )
-        
-        # Load state dict
-        self.model.load_state_dict(torch.load(path / "model.pt"))
-        self.model.to(self.device)
-        
+        self.model = CVJobMatcher.load(path)
         logger.info(f"Model loaded from {path}")

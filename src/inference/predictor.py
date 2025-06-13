@@ -55,22 +55,8 @@ class CVJobMatcherPredictor:
         Args:
             model_path: Path to load the model from
         """
-        # Load config
-        model_config = torch.load(model_path / "config.pt")
-        
-        # Create model with the same config
-        self.model = CVJobMatcher(
-            model_name=model_config['model_name'],
-            hidden_dim=model_config['hidden_dim'],
-            num_classes=model_config['num_classes'],
-            dropout_rate=model_config['dropout_rate']
-        )
-        
-        # Load state dict
-        self.model.load_state_dict(torch.load(model_path / "model.pt"))
-        self.model.to(self.device)
-        self.model.eval()
-        
+        # Load Random Forest model
+        self.model = CVJobMatcher.load(model_path)
         logger.info(f"Model loaded from {model_path}")
     
     def setup_extractors(self, cv_dir: Path, jobs_dir: Path) -> None:
@@ -90,8 +76,8 @@ class CVJobMatcherPredictor:
         self,
         cv_text: str,
         job_text: str,
-        max_cv_length: int = MAX_CV_LENGTH,
-        max_job_length: int = MAX_JOB_LENGTH
+        max_cv_length: int = MAX_CV_LENGTH,  # Not used with Random Forest but kept for compatibility
+        max_job_length: int = MAX_JOB_LENGTH  # Not used with Random Forest but kept for compatibility
     ) -> Dict[str, float]:
         """
         Predict match between CV and job texts.
@@ -99,45 +85,15 @@ class CVJobMatcherPredictor:
         Args:
             cv_text: CV text
             job_text: Job text
-            max_cv_length: Maximum token length for CV
-            max_job_length: Maximum token length for job
+            max_cv_length: Not used with Random Forest
+            max_job_length: Not used with Random Forest
             
         Returns:
             Dictionary with match probability and score
         """
-        # Tokenize texts
-        cv_encoding = self.tokenizer(
-            cv_text,
-            max_length=max_cv_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        job_encoding = self.tokenizer(
-            job_text,
-            max_length=max_job_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        # Move to device
-        cv_encoding = {k: v.to(self.device) for k, v in cv_encoding.items()}
-        job_encoding = {k: v.to(self.device) for k, v in job_encoding.items()}
-        
-        # Get prediction
-        with torch.no_grad():
-            outputs = self.model(
-                cv_input_ids=cv_encoding['input_ids'],
-                cv_attention_mask=cv_encoding['attention_mask'],
-                job_input_ids=job_encoding['input_ids'],
-                job_attention_mask=job_encoding['attention_mask']
-            )
-            
-            # Get probabilities
-            probs = torch.softmax(outputs['logits'], dim=1)
-            match_prob = probs[0, 1].item()  # Probability of match (class 1)
+        # Get prediction from Random Forest model
+        result = self.model.predict(cv_text, job_text)
+        match_prob = result["match_probability"]
         
         return {
             'match_probability': match_prob,

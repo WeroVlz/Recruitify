@@ -93,7 +93,7 @@ class CVJobDataset(Dataset):
         """Return the number of samples in the dataset."""
         return len(self.valid_applications)
     
-    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx) -> Dict[str, any]:
         """
         Get a sample from the dataset.
         
@@ -101,7 +101,7 @@ class CVJobDataset(Dataset):
             idx: Index of the sample
             
         Returns:
-            Dictionary with input tensors
+            Dictionary with text data and label
         """
         application = self.valid_applications.iloc[idx]
         cv_id = application['cv_id']
@@ -111,36 +111,17 @@ class CVJobDataset(Dataset):
         cv_text = self.cv_data[cv_id]['text']
         job_text = self.job_data[job_id]['text']
         
-        # Tokenize texts
-        cv_encoding = self.tokenizer(
-            cv_text,
-            max_length=self.max_cv_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        job_encoding = self.tokenizer(
-            job_text,
-            max_length=self.max_job_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
         # Create sample
         sample = {
             'cv_id': cv_id,
             'job_id': job_id,
-            'cv_input_ids': cv_encoding['input_ids'].squeeze(),
-            'cv_attention_mask': cv_encoding['attention_mask'].squeeze(),
-            'job_input_ids': job_encoding['input_ids'].squeeze(),
-            'job_attention_mask': job_encoding['attention_mask'].squeeze(),
+            'cv_text': cv_text,
+            'job_text': job_text,
         }
         
         # Add label for training
         if self.is_training and 'label' in application:
-            sample['label'] = torch.tensor(application['label'], dtype=torch.long)
+            sample['label'] = application['label']
         
         return sample
 
@@ -148,10 +129,10 @@ def create_dataloaders(
     cv_dir: Path,
     jobs_dir: Path,
     applications_file: Path,
-    tokenizer_name: str,
+    tokenizer_name: str = None,  # Not used with Random Forest but kept for compatibility
     batch_size: int = BATCH_SIZE,
-    max_cv_length: int = MAX_CV_LENGTH,
-    max_job_length: int = MAX_JOB_LENGTH,
+    max_cv_length: int = MAX_CV_LENGTH,  # Not used with Random Forest but kept for compatibility
+    max_job_length: int = MAX_JOB_LENGTH,  # Not used with Random Forest but kept for compatibility
     num_workers: int = NUM_WORKERS,
     train_ratio: float = 0.8,
     val_ratio: float = 0.1,
@@ -193,8 +174,8 @@ def create_dataloaders(
     cv_data = cv_extractor.process_all_cvs(cv_ids=unique_cv_ids)
     job_data = job_extractor.process_all_jobs(job_ids=unique_job_ids)
     
-    # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    # Tokenizer not needed for Random Forest approach
+    tokenizer = None
     
     # Split applications into train, validation, and test sets
     applications_df = applications_df.sample(frac=1, random_state=seed).reset_index(drop=True)
@@ -211,9 +192,7 @@ def create_dataloaders(
         cv_data=cv_data,
         job_data=job_data,
         applications_df=train_df,
-        tokenizer=tokenizer,
-        max_cv_length=max_cv_length,
-        max_job_length=max_job_length,
+        tokenizer=None,  # Not needed for Random Forest
         is_training=True
     )
     
@@ -221,9 +200,7 @@ def create_dataloaders(
         cv_data=cv_data,
         job_data=job_data,
         applications_df=val_df,
-        tokenizer=tokenizer,
-        max_cv_length=max_cv_length,
-        max_job_length=max_job_length,
+        tokenizer=None,  # Not needed for Random Forest
         is_training=True
     )
     
@@ -231,9 +208,7 @@ def create_dataloaders(
         cv_data=cv_data,
         job_data=job_data,
         applications_df=test_df,
-        tokenizer=tokenizer,
-        max_cv_length=max_cv_length,
-        max_job_length=max_job_length,
+        tokenizer=None,  # Not needed for Random Forest
         is_training=True
     )
     
