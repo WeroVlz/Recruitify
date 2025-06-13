@@ -4,12 +4,15 @@ Model for CV-Job matching using Random Forest.
 
 import numpy as np
 import pickle
+import logging
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from typing import Dict, List, Union, Tuple, Any
 import joblib
 import os
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 class CVJobMatcher:
     """
