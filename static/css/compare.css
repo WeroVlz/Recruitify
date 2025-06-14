@@ -8,6 +8,7 @@
     z-index: 10;
     border-radius: var(--border-radius);
     margin-bottom: 2rem;
+    transition: background-color var(--transition-speed) var(--transition-timing);
 }
 
 .nav-menu {
@@ -28,7 +29,8 @@
     color: var(--text-color);
     text-decoration: none;
     font-weight: 500;
-    transition: var(--transition-speed) var(--transition-timing);
+    transition: color var(--transition-speed) var(--transition-timing), 
+                border-bottom-color var(--transition-speed) var(--transition-timing);
     border-bottom: 3px solid transparent;
 }
 
