@@ -13,10 +13,10 @@ JOBS_DIR = DATA_DIR / "jobs"
 APPLICATIONS_FILE = DATA_DIR / "applications.parquet"
 
 # Processing settings
-BATCH_SIZE = 32
+BATCH_SIZE = 16  # Reduced batch size to save memory
 MAX_CV_LENGTH = 1024
 MAX_JOB_LENGTH = 1024
-NUM_WORKERS = 4
+NUM_WORKERS = 2  # Reduced workers to save memory
 
 # Model settings
 MODEL_NAME = "PlanTL-GOB-ES/roberta-base-bne"  # Spanish pre-trained model

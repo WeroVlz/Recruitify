@@ -41,44 +41,45 @@ class CVJobMatcher:
             min_samples_split: Minimum samples required to split a node
             random_state: Random state for reproducibility
         """
-        # Initialize TF-IDF vectorizers for CV and job text with improved parameters
+        # Initialize TF-IDF vectorizers for CV and job text with memory-efficient parameters
         self.cv_vectorizer = TfidfVectorizer(
-            max_features=10000,  # Increased from 5000 to capture more terms
-            ngram_range=(1, 3),  # Increased to include trigrams for better context
+            max_features=5000,  # Reduced to save memory
+            ngram_range=(1, 2),  # Reduced to bigrams to save memory
             stop_words=None,  # Don't use stopwords for Spanish
-            min_df=1,  # Reduced to capture rare but important terms
-            max_df=0.9,  # Ignore terms that appear in more than 90% of documents (too common)
+            min_df=2,  # Ignore terms that appear in less than 2 documents
+            max_df=0.9,  # Ignore terms that appear in more than 90% of documents
             lowercase=True,
             analyzer='word',
-            use_idf=True,  # Use inverse document frequency weighting
-            norm='l2',  # Normalize vectors
-            sublinear_tf=True  # Apply sublinear tf scaling (1+log(tf))
+            use_idf=True,
+            norm='l2',
+            sublinear_tf=True
         )
         
         self.job_vectorizer = TfidfVectorizer(
-            max_features=10000,  # Increased from 5000 to capture more terms
-            ngram_range=(1, 3),  # Increased to include trigrams for better context
+            max_features=5000,  # Reduced to save memory
+            ngram_range=(1, 2),  # Reduced to bigrams to save memory
             stop_words=None,  # Don't use stopwords for Spanish
-            min_df=1,  # Reduced to capture rare but important terms
-            max_df=0.9,  # Ignore terms that appear in more than 90% of documents (too common)
+            min_df=2,  # Ignore terms that appear in less than 2 documents
+            max_df=0.9,  # Ignore terms that appear in more than 90% of documents
             lowercase=True,
             analyzer='word',
-            use_idf=True,  # Use inverse document frequency weighting
-            norm='l2',  # Normalize vectors
-            sublinear_tf=True  # Apply sublinear tf scaling (1+log(tf))
+            use_idf=True,
+            norm='l2',
+            sublinear_tf=True
         )
         
-        # Initialize Random Forest classifier with improved parameters
+        # Initialize Random Forest classifier with memory-efficient parameters
         self.classifier = RandomForestClassifier(
-            n_estimators=200,  # Increased from default 100
-            max_depth=max_depth,
+            n_estimators=100,  # Reduced to save memory
+            max_depth=10,  # Limit tree depth to prevent memory issues
             min_samples_split=min_samples_split,
-            min_samples_leaf=1,
-            max_features='sqrt',  # Use sqrt(n_features) for each tree
+            min_samples_leaf=2,  # Increased to reduce tree complexity
+            max_features='sqrt',
             bootstrap=True,
-            class_weight='balanced',  # Handle imbalanced classes
+            class_weight='balanced',
             random_state=random_state,
-            n_jobs=-1  # Use all available cores
+            n_jobs=2,  # Limit parallel jobs to prevent memory issues
+            verbose=0
         )
         
         # Flag to check if vectorizers are fitted
@@ -140,12 +141,13 @@ class CVJobMatcher:
         if not self.vectorizers_fitted:
             raise ValueError("Vectorizers not fitted. Call fit_vectorizers first.")
         
-        # Transform texts to TF-IDF vectors
-        cv_vectors = self.cv_vectorizer.transform(cv_texts).toarray()
-        job_vectors = self.job_vectorizer.transform(job_texts).toarray()
+        # Transform texts to TF-IDF vectors - keep as sparse matrices to save memory
+        cv_vectors = self.cv_vectorizer.transform(cv_texts)
+        job_vectors = self.job_vectorizer.transform(job_texts)
         
-        # Concatenate vectors
-        return np.hstack((cv_vectors, job_vectors))
+        # Use scipy's hstack for sparse matrices instead of converting to dense arrays
+        from scipy.sparse import hstack
+        return hstack((cv_vectors, job_vectors))
     
     def fit(self, cv_texts: List[str], job_texts: List[str], labels: List[int]) -> None:
         """
@@ -160,11 +162,35 @@ class CVJobMatcher:
         if not self.vectorizers_fitted:
             self.fit_vectorizers(cv_texts, job_texts)
         
-        # Extract features
-        X = self.extract_batch_features(cv_texts, job_texts)
-        
-        # Fit classifier
-        self.classifier.fit(X, labels)
+        # Process in smaller batches to save memory
+        batch_size = 1000
+        for i in range(0, len(cv_texts), batch_size):
+            end_idx = min(i + batch_size, len(cv_texts))
+            
+            # Extract features for this batch
+            X_batch = self.extract_batch_features(
+                cv_texts[i:end_idx], 
+                job_texts[i:end_idx]
+            )
+            y_batch = labels[i:end_idx]
+            
+            # Partial fit - for the first batch, this is equivalent to starting the fit
+            if i == 0:
+                self.classifier.fit(X_batch, y_batch)
+            else:
+                # For subsequent batches, we'd ideally use partial_fit, but RandomForest doesn't support it
+                # Instead, we'll train a separate model and combine predictions (this is a workaround)
+                temp_clf = RandomForestClassifier(
+                    n_estimators=10,  # Use fewer trees for incremental batches
+                    max_depth=10,
+                    random_state=self.classifier.random_state,
+                    n_jobs=2
+                )
+                temp_clf.fit(X_batch, y_batch)
+                
+                # Add the new estimators to our main classifier
+                self.classifier.estimators_ += temp_clf.estimators_
+                self.classifier.n_estimators = len(self.classifier.estimators_)
     
     def predict(self, cv_text: str, job_text: str) -> Dict[str, Any]:
         """

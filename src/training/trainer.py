@@ -93,23 +93,52 @@ class CVJobMatcherTrainer:
         
         logger.info("Collecting training data...")
         
-        # Collect all training data
-        cv_texts = []
-        job_texts = []
-        labels = []
+        # Process training data in batches to save memory
+        logger.info("Processing training data in batches...")
         
-        for batch in tqdm(self.train_dataloader, desc="Processing training data"):
-            cv_texts.extend(batch['cv_text'])
-            job_texts.extend(batch['job_text'])
-            labels.extend(batch['label'].numpy())
+        # First pass: collect unique texts for vectorizer fitting
+        sample_cv_texts = []
+        sample_job_texts = []
+        sample_size = 5000  # Limit sample size for vectorizer fitting
         
-        # Fit vectorizers
-        logger.info("Fitting vectorizers...")
-        self.model.fit_vectorizers(cv_texts, job_texts)
+        for i, batch in enumerate(self.train_dataloader):
+            if len(sample_cv_texts) < sample_size:
+                batch_cv_texts = batch['cv_text']
+                batch_job_texts = batch['job_text']
+                
+                # Add only what we need to reach sample_size
+                remaining = sample_size - len(sample_cv_texts)
+                sample_cv_texts.extend(batch_cv_texts[:remaining])
+                sample_job_texts.extend(batch_job_texts[:remaining])
+            else:
+                break
         
-        # Train the model
-        logger.info("Training Random Forest model...")
-        self.model.fit(cv_texts, job_texts, labels)
+        # Fit vectorizers on the sample
+        logger.info(f"Fitting vectorizers on {len(sample_cv_texts)} samples...")
+        self.model.fit_vectorizers(sample_cv_texts, sample_job_texts)
+        
+        # Second pass: train in batches
+        logger.info("Training Random Forest model in batches...")
+        batch_size = 1000
+        processed = 0
+        
+        for batch in self.train_dataloader:
+            batch_cv_texts = batch['cv_text']
+            batch_job_texts = batch['job_text']
+            batch_labels = batch['label'].numpy()
+            
+            # Process in smaller sub-batches
+            for i in range(0, len(batch_cv_texts), batch_size):
+                end_idx = min(i + batch_size, len(batch_cv_texts))
+                sub_cv_texts = batch_cv_texts[i:end_idx]
+                sub_job_texts = batch_job_texts[i:end_idx]
+                sub_labels = batch_labels[i:end_idx]
+                
+                # Train on this sub-batch
+                self.model.fit(sub_cv_texts, sub_job_texts, sub_labels)
+                
+                processed += len(sub_cv_texts)
+                logger.info(f"Processed {processed} training examples")
         
         # Evaluate on validation set
         logger.info("Evaluating on validation set...")
@@ -162,19 +191,27 @@ class CVJobMatcherTrainer:
         all_preds = []
         all_probs = []
         
-        # Collect all evaluation data
-        cv_texts = []
-        job_texts = []
+        # Process evaluation data in batches to save memory
+        batch_size = 500
+        all_preds = []
+        all_probs = []
         
-        for batch in tqdm(dataloader, desc="Processing evaluation data"):
-            cv_texts.extend(batch['cv_text'])
-            job_texts.extend(batch['job_text'])
-            all_labels.extend(batch['label'].numpy())
-        
-        # Predict
-        results = self.model.predict_batch(cv_texts, job_texts)
-        all_preds = results['class']
-        all_probs = results['match_probability']
+        for batch in dataloader:
+            batch_cv_texts = batch['cv_text']
+            batch_job_texts = batch['job_text']
+            batch_labels = batch['label'].numpy()
+            all_labels.extend(batch_labels)
+            
+            # Process in smaller sub-batches
+            for i in range(0, len(batch_cv_texts), batch_size):
+                end_idx = min(i + batch_size, len(batch_cv_texts))
+                sub_cv_texts = batch_cv_texts[i:end_idx]
+                sub_job_texts = batch_job_texts[i:end_idx]
+                
+                # Predict on this sub-batch
+                results = self.model.predict_batch(sub_cv_texts, sub_job_texts)
+                all_preds.extend(results['class'])
+                all_probs.extend(results['match_probability'])
         
         # Calculate metrics
         all_labels = np.array(all_labels)
