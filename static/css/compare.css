@@ -212,20 +212,15 @@
     color: var(--text-color);
 }
 
-.job-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
 .match-indicator {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
     background-color: rgba(16, 185, 129, 0.1);
+    margin-left: 1rem;
+    vertical-align: middle;
 }
 
 .match-indicator.match-high {

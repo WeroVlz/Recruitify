@@ -277,13 +277,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 jobModal.innerHTML = `
                     <div class="modal-content job-details-content">
                         <span class="close">&times;</span>
-                        <div class="job-header">
-                            <h2>ID: ${job.job_id}</h2>
-                            <div class="match-indicator match-high">
+                        <h2>
+                            ID: ${job.job_id}
+                            <span class="match-indicator match-high">
                                 <span class="match-value">${job.match_score}</span>
                                 <span class="match-label">Compatibilidad</span>
-                            </div>
-                        </div>
+                            </span>
+                        </h2>
                         <div class="job-description">
                             <h3>Contenido HTML:</h3>
                             <div class="html-content-box">
