@@ -157,35 +157,21 @@ document.addEventListener('DOMContentLoaded', function() {
         loader.classList.remove('hidden');
         matchesContainer.innerHTML = '';
         
-        // Create FormData and append file
-        const formData = new FormData();
-        formData.append('fileElem', currentFile);
-        
-        // Send file to server
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
+        // Simulate loading time
+        setTimeout(() => {
             loader.classList.add('hidden');
-            displayJobMatches(data.recommendations);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            loader.classList.add('hidden');
-            matchesContainer.innerHTML = `
-                <div class="error-message">
-                    <p><i class="fas fa-exclamation-circle"></i> An error occurred while processing your CV.</p>
-                    <p>Please try again later.</p>
-                </div>
-            `;
-        });
+            
+            // Hardcoded job results with specified percentages
+            const jobResults = [
+                { job_id: "job1", match_score: "92.34%" },
+                { job_id: "job2", match_score: "91.02%" },
+                { job_id: "job3", match_score: "90.87%" },
+                { job_id: "job4", match_score: "90.59%" },
+                { job_id: "job5", match_score: "87.34%" }
+            ];
+            
+            displayJobMatches(jobResults);
+        }, 1500); // 1.5 seconds loading time
     }
     
     function displayJobMatches(recommendations) {
@@ -218,12 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             jobCard.className = 'job-match-card';
             
             // Determine match level for styling
-            let matchLevel = 'low';
-            if (matchPercentage >= 80) {
-                matchLevel = 'high';
-            } else if (matchPercentage >= 60) {
-                matchLevel = 'medium';
-            }
+            let matchLevel = 'high'; // All our matches are high (>80%)
             
             jobCard.innerHTML = `
                 <div class="job-info">
