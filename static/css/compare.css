@@ -238,25 +238,51 @@
 }
 
 .job-content-container {
-    height: 70vh;
+    height: 75vh;
     overflow: hidden;
+    margin-top: 1rem;
 }
 
 .job-html-content {
     height: 100%;
     overflow-y: auto;
-    padding: 0;
     background-color: var(--background-color);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.job-content-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+.job-content-div {
+    padding: 1.5rem;
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
     background-color: var(--background-color);
+}
+
+.job-content-div h1, 
+.job-content-div h2, 
+.job-content-div h3, 
+.job-content-div h4, 
+.job-content-div h5, 
+.job-content-div h6 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.job-content-div p {
+    margin-bottom: 1rem;
+}
+
+.job-content-div ul, 
+.job-content-div ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.job-content-div li {
+    margin-bottom: 0.5rem;
 }
 
 .job-details {
