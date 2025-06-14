@@ -212,6 +212,43 @@
     color: var(--text-color);
 }
 
+/* Match level styling */
+.match-high {
+    color: #10b981 !important;
+}
+
+.match-medium {
+    color: #f59e0b !important;
+}
+
+.match-low {
+    color: #ef4444 !important;
+}
+
+.match-circle.match-high {
+    background: conic-gradient(#10b981 0%, #10b981 var(--percentage), #e2e8f0 var(--percentage), #e2e8f0 100%);
+}
+
+.match-circle.match-medium {
+    background: conic-gradient(#f59e0b 0%, #f59e0b var(--percentage), #e2e8f0 var(--percentage), #e2e8f0 100%);
+}
+
+.match-circle.match-low {
+    background: conic-gradient(#ef4444 0%, #ef4444 var(--percentage), #e2e8f0 var(--percentage), #e2e8f0 100%);
+}
+
+.match-recommendation {
+    margin-top: 1rem;
+    font-weight: 500;
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .match-recommendation {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
 .job-modal-header {
     display: flex;
     align-items: center;

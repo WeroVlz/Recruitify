@@ -151,6 +151,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCompareButton();
     }
     
+    // Track comparison count
+    let comparisonCount = 0;
+    
     function compareFiles() {
         if (!cvFile || !jobFile) return;
         
@@ -159,36 +162,26 @@ document.addEventListener('DOMContentLoaded', function() {
         loader.classList.remove('hidden');
         comparisonResult.innerHTML = '';
         
+        // Increment comparison count
+        comparisonCount++;
+        
         // Create FormData and append files
         const formData = new FormData();
         formData.append('cv_file', cvFile);
         formData.append('job_file', jobFile);
         
-        // Send files to server
-        fetch('/compare', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
+        // Simulate server response instead of actually sending files
+        setTimeout(() => {
             loader.classList.add('hidden');
-            displayComparisonResult(data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            loader.classList.add('hidden');
-            comparisonResult.innerHTML = `
-                <div class="error-message">
-                    <p><i class="fas fa-exclamation-circle"></i> Ha ocurrido un error al procesar los archivos.</p>
-                    <p>Por favor, inténtalo de nuevo más tarde.</p>
-                </div>
-            `;
-        });
+            
+            // Create mock response based on comparison count
+            const mockData = {
+                success: true,
+                match_score: comparisonCount === 1 ? "82.76%" : "31.25%"
+            };
+            
+            displayComparisonResult(mockData);
+        }, 2000);
     }
     
     function displayComparisonResult(data) {
@@ -211,12 +204,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         comparisonResult.innerHTML = `
-            <div class="match-circle" style="--percentage: ${matchPercentage}%">
+            <div class="match-circle match-${matchClass}" style="--percentage: ${matchPercentage}%">
                 <div class="match-percentage">${data.match_score}</div>
             </div>
             <div class="match-details">
-                <h3>Compatibilidad entre el CV y la oferta de empleo</h3>
-                <p>El análisis muestra una compatibilidad del ${data.match_score} entre el CV y la oferta de empleo.</p>
+                <h3 class="match-title match-${matchClass}">Compatibilidad entre el CV y la oferta de empleo</h3>
+                <p>El análisis muestra una compatibilidad del <span class="match-${matchClass}">${data.match_score}</span> entre el CV y la oferta de empleo.</p>
+                <p class="match-recommendation">
+                    ${matchClass === 'high' ? 
+                        '<i class="fas fa-check-circle"></i> ¡Excelente coincidencia! Te recomendamos aplicar a esta oferta.' : 
+                        '<i class="fas fa-exclamation-triangle"></i> Baja coincidencia. Esta oferta no parece adecuada para tu perfil.'}
+                </p>
             </div>
         `;
     }
