@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
             jobCard.innerHTML = `
                 <div class="job-info">
                     <div class="job-rank">#${index + 1}</div>
-                    <h3>${job.job_id}</h3>
+                    <h3>Job id: ${job.job_id}</h3>
                 </div>
                 <div class="job-match">
                     <div class="match-percentage match-${matchLevel}">${job.match_score}</div>
