@@ -499,13 +499,18 @@ footer .container {
 #model-info-content p {
     margin-bottom: 1.2rem;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
 }
 
 #model-info-content p strong {
-    min-width: 120px;
+    min-width: 150px;
     color: var(--primary-color);
+    display: inline-block;
+}
+
+#model-info-content p span {
+    flex: 1;
 }
 
 .loader {

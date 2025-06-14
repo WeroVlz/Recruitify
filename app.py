@@ -71,9 +71,9 @@ def model_info():
         # Return model information
         return jsonify({
             'success': True,
-            'model_type': 'LLM Feature Extraction - Random Forest Classifier',
+            'model_type': 'Random Forest',
             'accuracy': '85%',
-            'last_trained': '2025-13-06',
+            'last_trained': '2025-06-13',
             'dataset_size': '170,000 CVs, 15,000 Jobs'
         })
     except Exception as e:
