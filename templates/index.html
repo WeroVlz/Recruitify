@@ -4,299 +4,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recruitify - CV-Job Matching</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-        .header {
-            background-color: #4a6fdc;
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-        }
-        .upload-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .drop-area {
-            border: 2px dashed #4a6fdc;
-            border-radius: 10px;
-            padding: 3rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .drop-area:hover, .drop-area.dragover {
-            background-color: #f0f4ff;
-            border-color: #2a4fbc;
-        }
-        .drop-area i {
-            font-size: 3rem;
-            color: #4a6fdc;
-            margin-bottom: 1rem;
-        }
-        .results-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            display: none;
-        }
-        .job-card {
-            border-left: 4px solid #4a6fdc;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-        .match-score {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4a6fdc;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 2rem 0;
-        }
-        .loading i {
-            font-size: 3rem;
-            color: #4a6fdc;
-            animation: spin 2s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .footer {
-            background-color: #343a40;
-            color: white;
-            padding: 1rem 0;
-            margin-top: 2rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
 </head>
 <body>
-    <div class="header">
+    <header class="site-header">
         <div class="container">
-            <h1><i class="fas fa-briefcase"></i> Recruitify</h1>
-            <p class="lead">Find the perfect job match for your CV using AI</p>
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="logo-container">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Recruitify Logo" class="logo">
+                        <h1>Recruitify</h1>
+                    </div>
+                    <p class="tagline">Find your perfect job match with AI</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <nav>
+                        <ul class="nav-links">
+                            <li><a href="#" class="active">Home</a></li>
+                            <li><a href="#">About</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="hero-content">
+                        <h2>Match Your CV to the Perfect Job</h2>
+                        <p>Our AI-powered system analyzes your CV and matches it with the most suitable job opportunities in our database.</p>
+                        <div class="features">
+                            <div class="feature">
+                                <i class="fas fa-bolt"></i>
+                                <span>Fast Analysis</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Accurate Matching</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-lock"></i>
+                                <span>Secure Processing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="upload-container">
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <h3>Upload your CV</h3>
+                        <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+                            <div class="drop-area" id="drop-area">
+                                <i class="fas fa-file-upload"></i>
+                                <h4>Drag &amp; Drop your CV here</h4>
+                                <p>or</p>
+                                <input type="file" id="cv-file" name="cv" accept=".pdf" class="d-none">
+                                <button type="button" class="btn btn-primary" id="select-file-btn">Browse Files</button>
+                                <p class="file-hint">Only PDF files are accepted</p>
+                            </div>
+                            <div class="selected-file mt-3 d-none">
+                                <div class="file-info">
+                                    <i class="fas fa-file-pdf"></i> <span id="selected-filename"></span>
+                                    <button type="button" class="btn-remove" id="remove-file-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-submit" id="submit-btn" disabled>
+                                    <i class="fas fa-search"></i> Find Matching Jobs
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="loading" id="loading">
+        <div class="spinner">
+            <i class="fas fa-spinner"></i>
+        </div>
+        <h3>Analyzing your CV and finding matches...</h3>
+        <p>This may take a few moments</p>
     </div>
 
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="upload-container">
-            <h2 class="mb-4">Upload your CV</h2>
-            <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
-                <div class="drop-area" id="drop-area">
-                    <i class="fas fa-file-upload"></i>
-                    <h3>Drag &amp; Drop your CV here</h3>
-                    <p>or</p>
-                    <input type="file" id="cv-file" name="cv" accept=".pdf" class="d-none">
-                    <button type="button" class="btn btn-primary" id="select-file-btn">Select File</button>
-                    <p class="mt-3 text-muted">Only PDF files are accepted</p>
-                </div>
-                <div class="selected-file mt-3 d-none">
-                    <div class="alert alert-info">
-                        <i class="fas fa-file-pdf"></i> <span id="selected-filename"></span>
-                        <button type="button" class="btn btn-sm btn-outline-danger float-end" id="remove-file-btn">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg" id="submit-btn" disabled>
-                        <i class="fas fa-search"></i> Find Matching Jobs
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="loading" id="loading">
-            <i class="fas fa-spinner"></i>
-            <h3 class="mt-3">Analyzing your CV and finding matches...</h3>
-            <p>This may take a few moments</p>
-        </div>
-
-        <div class="results-container" id="results-container">
-            <h2 class="mb-4">Top 5 Job Recommendations</h2>
-            <div id="recommendations-list">
+    <section class="results-section" id="results-container">
+        <div class="container">
+            <h2>Top 5 Job Recommendations</h2>
+            <div class="results-grid" id="recommendations-list">
                 <!-- Job recommendations will be inserted here -->
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="footer mt-5">
-        <div class="container text-center">
-            <p>© 2025 Recruitify - CV-Job Matching System</p>
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Recruitify</h4>
+                    <p>AI-powered CV-Job matching system that helps you find the perfect job match.</p>
+                </div>
+                <div class="col-md-4">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Services</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h4>Contact Us</h4>
+                    <p><i class="fas fa-envelope"></i> info@recruitify.com</p>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>© 2025 Recruitify - All Rights Reserved</p>
+            </div>
         </div>
-    </div>
+    </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropArea = document.getElementById('drop-area');
-            const fileInput = document.getElementById('cv-file');
-            const selectFileBtn = document.getElementById('select-file-btn');
-            const selectedFile = document.querySelector('.selected-file');
-            const selectedFilename = document.getElementById('selected-filename');
-            const removeFileBtn = document.getElementById('remove-file-btn');
-            const submitBtn = document.getElementById('submit-btn');
-            const uploadForm = document.getElementById('upload-form');
-            const loading = document.getElementById('loading');
-            const resultsContainer = document.getElementById('results-container');
-            const recommendationsList = document.getElementById('recommendations-list');
-
-            // Open file dialog when button is clicked
-            selectFileBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            // Handle file selection
-            fileInput.addEventListener('change', handleFileSelect);
-
-            // Handle drag and drop events
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
-            });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, highlight, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, unhighlight, false);
-            });
-
-            function highlight() {
-                dropArea.classList.add('dragover');
-            }
-
-            function unhighlight() {
-                dropArea.classList.remove('dragover');
-            }
-
-            dropArea.addEventListener('drop', handleDrop, false);
-
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                
-                if (files.length > 0) {
-                    fileInput.files = files;
-                    handleFileSelect();
-                }
-            }
-
-            function handleFileSelect() {
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    
-                    // Check if file is PDF
-                    if (file.type !== 'application/pdf') {
-                        alert('Please upload a PDF file');
-                        fileInput.value = '';
-                        return;
-                    }
-                    
-                    // Show selected file
-                    selectedFilename.textContent = file.name;
-                    selectedFile.classList.remove('d-none');
-                    submitBtn.disabled = false;
-                }
-            }
-
-            // Remove selected file
-            removeFileBtn.addEventListener('click', () => {
-                fileInput.value = '';
-                selectedFile.classList.add('d-none');
-                submitBtn.disabled = true;
-            });
-
-            // Handle form submission
-            uploadForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Show loading indicator
-                loading.style.display = 'block';
-                resultsContainer.style.display = 'none';
-                
-                // Submit form via AJAX
-                const formData = new FormData(uploadForm);
-                
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Hide loading indicator
-                    loading.style.display = 'none';
-                    
-                    if (data.success) {
-                        // Display results
-                        displayResults(data.recommendations);
-                    } else {
-                        alert('Error: ' + (data.error || 'Failed to process CV'));
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    alert('Error: ' + error.message);
-                });
-            });
-
-            function displayResults(recommendations) {
-                // Clear previous results
-                recommendationsList.innerHTML = '';
-                
-                // Add each recommendation
-                recommendations.forEach((rec, index) => {
-                    const jobCard = document.createElement('div');
-                    jobCard.className = 'job-card';
-                    jobCard.innerHTML = `
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h4><i class="fas fa-briefcase"></i> Job ID: ${rec.job_id}</h4>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <span class="match-score">${rec.match_score} Match</span>
-                            </div>
-                        </div>
-                    `;
-                    recommendationsList.appendChild(jobCard);
-                });
-                
-                // Show results container
-                resultsContainer.style.display = 'block';
-                
-                // Scroll to results
-                resultsContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
