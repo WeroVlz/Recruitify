@@ -71,7 +71,7 @@ def model_info():
         # Return model information
         return jsonify({
             'success': True,
-            'model_type': 'Random Forest',
+            'model_type': 'LLM - Random Forest',
             'accuracy': '85%',
             'last_trained': '2025-06-13',
             'dataset_size': '170,000 CVs, 15,000 Jobs'
