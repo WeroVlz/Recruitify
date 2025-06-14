@@ -238,7 +238,7 @@
 }
 
 .job-content-container {
-    height: 75vh;
+    flex: 1;
     overflow: hidden;
     margin-top: 1rem;
 }
@@ -258,6 +258,8 @@
     font-family: 'Inter', sans-serif;
     line-height: 1.6;
     background-color: var(--background-color);
+    overflow-y: auto;
+    height: 100%;
 }
 
 .job-content-div h1, 
@@ -309,9 +311,11 @@
 }
 
 .modal-content.job-details-content {
+    display: flex;
+    flex-direction: column;
     max-width: 800px;
     width: 90%;
-    max-height: 90vh;
+    height: 80vh;
     padding: 1.5rem;
 }
 
