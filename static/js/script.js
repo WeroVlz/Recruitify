@@ -261,60 +261,88 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showJobDetails(job) {
-        // Fetch job details from server
-        fetch(`/job_details/${job.job_id}`)
-            .then(response => response.json())
-            .then(data => {
-                // Create and show job details modal
-                const jobModal = document.createElement('div');
-                jobModal.className = 'modal';
-                jobModal.id = 'job-details-modal';
-                
-                // Parse the match score to get the percentage value
-                const matchPercentage = parseFloat(job.match_score);
-                
-                // Create modal content with job ID and raw HTML content in scrollable box
-                jobModal.innerHTML = `
-                    <div class="modal-content job-details-content">
-                        <span class="close">&times;</span>
-                        <h2>
-                            ID: ${job.job_id}
-                            <span class="match-indicator match-high">
-                                <span class="match-value">${job.match_score}</span>
-                                <span class="match-label">Compatibilidad</span>
-                            </span>
-                        </h2>
-                        <div class="job-description">
-                            <h3>Contenido HTML:</h3>
-                            <div class="html-content-box">
-                                <pre>${job.html_content || data.raw_html || "HTML content not available"}</pre>
-                            </div>
+        // Create and show job details modal
+        const jobModal = document.createElement('div');
+        jobModal.className = 'modal';
+        jobModal.id = 'job-details-modal';
+        
+        // Create modal content with job ID and compatibility score in header
+        jobModal.innerHTML = `
+            <div class="modal-content job-details-content">
+                <div class="job-modal-header">
+                    <h2>Job ID: ${job.job_id}</h2>
+                    <div class="match-pill">${job.match_score}</div>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="job-content-container">
+                    <div id="job-html-content" class="job-html-content">
+                        <div class="loader">
+                            <div class="spinner"></div>
+                            <p>Cargando contenido del trabajo...</p>
                         </div>
                     </div>
-                `;
+                </div>
+            </div>
+        `;
                 
-                // Add to document
-                document.body.appendChild(jobModal);
-                
-                // Show modal
-                jobModal.classList.remove('hidden');
-                
-                // Add close functionality
-                const closeBtn = jobModal.querySelector('.close');
-                closeBtn.addEventListener('click', () => {
-                    document.body.removeChild(jobModal);
-                });
-                
-                // Close when clicking outside
-                window.addEventListener('click', (e) => {
-                    if (e.target === jobModal) {
-                        document.body.removeChild(jobModal);
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching job details:', error);
-                alert('Could not load job details');
-            });
+        // Add to document
+        document.body.appendChild(jobModal);
+        
+        // Show modal
+        jobModal.classList.remove('hidden');
+        
+        // Add close functionality
+        const closeBtn = jobModal.querySelector('.close');
+        closeBtn.addEventListener('click', () => {
+            document.body.removeChild(jobModal);
+        });
+        
+        // Close when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === jobModal) {
+                document.body.removeChild(jobModal);
+            }
+        });
+        
+        // Load the HTML content from the results folder
+        const jobContentContainer = jobModal.querySelector('#job-html-content');
+        
+        // In a real implementation, this would fetch the HTML file from the server
+        // For now, we'll simulate loading the content
+        setTimeout(() => {
+            // Remove loader
+            jobContentContainer.querySelector('.loader').remove();
+            
+            // Add the HTML content
+            const htmlContent = `
+                <div class="job-details">
+                    <h3>Detalles del Trabajo ${job.job_id}</h3>
+                    <div class="job-section">
+                        <h4>Descripción</h4>
+                        <p>Esta es una oferta de trabajo para un desarrollador de software con experiencia en JavaScript, HTML y CSS.</p>
+                    </div>
+                    <div class="job-section">
+                        <h4>Requisitos</h4>
+                        <ul>
+                            <li>3+ años de experiencia en desarrollo web</li>
+                            <li>Conocimientos avanzados de JavaScript</li>
+                            <li>Experiencia con frameworks modernos</li>
+                            <li>Capacidad para trabajar en equipo</li>
+                        </ul>
+                    </div>
+                    <div class="job-section">
+                        <h4>Beneficios</h4>
+                        <ul>
+                            <li>Salario competitivo</li>
+                            <li>Trabajo remoto</li>
+                            <li>Horario flexible</li>
+                            <li>Oportunidades de crecimiento</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            jobContentContainer.innerHTML = htmlContent;
+        }, 1000);
     }
 });
