@@ -313,36 +313,79 @@ document.addEventListener('DOMContentLoaded', function() {
             // Remove loader
             jobContentContainer.querySelector('.loader').remove();
             
-            // Add the HTML content
-            const htmlContent = `
-                <div class="job-details">
-                    <h3>Detalles del Trabajo ${job.job_id}</h3>
-                    <div class="job-section">
-                        <h4>Descripción</h4>
-                        <p>Esta es una oferta de trabajo para un desarrollador de software con experiencia en JavaScript, HTML y CSS.</p>
-                    </div>
-                    <div class="job-section">
-                        <h4>Requisitos</h4>
-                        <ul>
-                            <li>3+ años de experiencia en desarrollo web</li>
-                            <li>Conocimientos avanzados de JavaScript</li>
-                            <li>Experiencia con frameworks modernos</li>
-                            <li>Capacidad para trabajar en equipo</li>
-                        </ul>
-                    </div>
-                    <div class="job-section">
-                        <h4>Beneficios</h4>
-                        <ul>
-                            <li>Salario competitivo</li>
-                            <li>Trabajo remoto</li>
-                            <li>Horario flexible</li>
-                            <li>Oportunidades de crecimiento</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-            
-            jobContentContainer.innerHTML = htmlContent;
+            // Fetch the actual HTML content from the server based on job ID
+            fetch(`/job_details/${job.job_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Create an iframe to display the HTML content properly
+                    const iframe = document.createElement('iframe');
+                    iframe.className = 'job-content-iframe';
+                    iframe.title = `Job ${job.job_id} Content`;
+                    iframe.sandbox = 'allow-same-origin';
+                    jobContentContainer.appendChild(iframe);
+                    
+                    // Write the HTML content to the iframe
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(`
+                        <html>
+                        <head>
+                            <style>
+                                body {
+                                    font-family: 'Inter', sans-serif;
+                                    line-height: 1.6;
+                                    color: #333;
+                                    padding: 1rem;
+                                    margin: 0;
+                                }
+                                
+                                h1, h2, h3, h4, h5, h6 {
+                                    color: #2563eb;
+                                    margin-top: 1.5rem;
+                                    margin-bottom: 0.75rem;
+                                }
+                                
+                                p {
+                                    margin-bottom: 1rem;
+                                }
+                                
+                                ul, ol {
+                                    padding-left: 1.5rem;
+                                    margin-bottom: 1rem;
+                                }
+                                
+                                li {
+                                    margin-bottom: 0.5rem;
+                                }
+                                
+                                @media (prefers-color-scheme: dark) {
+                                    body {
+                                        color: #e2e8f0;
+                                        background-color: #1e293b;
+                                    }
+                                    
+                                    h1, h2, h3, h4, h5, h6 {
+                                        color: #3b82f6;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            ${data.raw_html || job.html_content || "No content available for this job."}
+                        </body>
+                        </html>
+                    `);
+                    iframeDoc.close();
+                })
+                .catch(error => {
+                    console.error('Error fetching job HTML:', error);
+                    jobContentContainer.innerHTML = `
+                        <div class="error-message">
+                            <p><i class="fas fa-exclamation-circle"></i> Error loading job content.</p>
+                            <p>Please try again later.</p>
+                        </div>
+                    `;
+                });
         }, 1000);
     }
 });
