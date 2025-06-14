@@ -163,11 +163,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Hardcoded job results with specified percentages
             const jobResults = [
-                { job_id: "job1", match_score: "92.34%" },
-                { job_id: "job2", match_score: "91.02%" },
-                { job_id: "job3", match_score: "90.87%" },
-                { job_id: "job4", match_score: "90.59%" },
-                { job_id: "job5", match_score: "87.34%" }
+                { job_id: "57997", match_score: "92.34%" },
+                { job_id: "58018", match_score: "91.02%" },
+                { job_id: "58087", match_score: "90.87%" },
+                { job_id: "58125", match_score: "90.59%" },
+                { job_id: "58366", match_score: "87.34%" }
             ];
             
             displayJobMatches(jobResults);
