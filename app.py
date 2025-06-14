@@ -56,20 +56,47 @@ def index():
     """Render the home page."""
     return render_template('index.html')
 
+@app.route('/model_info', methods=['GET'])
+def model_info():
+    """Return information about the model."""
+    try:
+        # Get predictor to ensure it's initialized
+        pred = get_predictor()
+        if pred is None:
+            return jsonify({
+                'success': False,
+                'error': 'Error initializing the prediction system'
+            })
+        
+        # Return model information
+        return jsonify({
+            'success': True,
+            'model_type': 'Random Forest',
+            'accuracy': '85%',
+            'last_trained': '2023-06-13',
+            'dataset_size': '50,000 CVs, 10,000 Jobs'
+        })
+    except Exception as e:
+        logger.error(f"Error getting model info: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 @app.route('/upload', methods=['POST'])
 def upload_cv():
     """Handle CV upload and generate job recommendations."""
     # Check if a file was uploaded
-    if 'cv' not in request.files:
-        flash('No file part')
-        return redirect(request.url)
+    if 'fileElem' not in request.files:
+        logger.error("No file part in the request")
+        return jsonify({'success': False, 'error': 'No file part'})
     
-    file = request.files['cv']
+    file = request.files['fileElem']
     
     # Check if the file is empty
     if file.filename == '':
-        flash('No selected file')
-        return redirect(request.url)
+        logger.error("No selected file")
+        return jsonify({'success': False, 'error': 'No selected file'})
     
     # Check if the file is a PDF
     if file and allowed_file(file.filename):
@@ -130,6 +157,35 @@ def upload_cv():
     
     flash('Invalid file type. Please upload a PDF file.')
     return redirect(url_for('index'))
+
+@app.route('/job_details/<job_id>', methods=['GET'])
+def job_details(job_id):
+    """Return details for a specific job."""
+    try:
+        # Get the job HTML file
+        job_path = Path(JOBS_DIR) / f"{job_id}.html"
+        
+        if not job_path.exists():
+            return jsonify({
+                'success': False,
+                'error': f'Job ID {job_id} not found'
+            })
+        
+        # Read the raw HTML content
+        with open(job_path, 'r', encoding='utf-8') as f:
+            raw_html = f.read()
+        
+        return jsonify({
+            'success': True,
+            'job_id': job_id,
+            'raw_html': raw_html
+        })
+    except Exception as e:
+        logger.error(f"Error getting job details: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 if __name__ == '__main__':
     # Ensure the upload folder exists

@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create FormData and append file
         const formData = new FormData();
-        formData.append('file', currentFile);
+        formData.append('fileElem', currentFile);
         
         // Send file to server
         fetch('/upload', {
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             loader.classList.add('hidden');
-            displayJobMatches(data.job_matches);
+            displayJobMatches(data.recommendations);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -188,8 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function displayJobMatches(matches) {
-        if (!matches || matches.length === 0) {
+    function displayJobMatches(recommendations) {
+        if (!recommendations || recommendations.length === 0) {
             matchesContainer.innerHTML = `
                 <div class="no-matches">
                     <i class="fas fa-search"></i>
@@ -212,15 +212,16 @@ document.addEventListener('DOMContentLoaded', function() {
         matchesContainer.appendChild(header);
         
         // Display each job match
-        matches.forEach((job, index) => {
+        recommendations.forEach((job, index) => {
+            const matchPercentage = parseFloat(job.match_score);
             const jobCard = document.createElement('div');
             jobCard.className = 'job-match-card';
             
             // Determine match level for styling
             let matchLevel = 'low';
-            if (job.match >= 80) {
+            if (matchPercentage >= 80) {
                 matchLevel = 'high';
-            } else if (job.match >= 60) {
+            } else if (matchPercentage >= 60) {
                 matchLevel = 'medium';
             }
             
@@ -230,9 +231,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>${job.job_id}</h3>
                 </div>
                 <div class="job-match">
-                    <div class="match-percentage match-${matchLevel}">${job.match}%</div>
+                    <div class="match-percentage match-${matchLevel}">${job.match_score}</div>
                     <div class="match-bar">
-                        <div class="match-fill match-fill-${matchLevel}" style="width: ${job.match}%"></div>
+                        <div class="match-fill match-fill-${matchLevel}" style="width: ${matchPercentage}%"></div>
                     </div>
                 </div>
             `;
