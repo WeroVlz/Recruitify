@@ -217,21 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="match-details">
                 <h3>Compatibilidad entre el CV y la oferta de empleo</h3>
                 <p>El análisis muestra una compatibilidad del ${data.match_score} entre el CV y la oferta de empleo.</p>
-                
-                <div class="match-factors">
-                    <div class="match-factor">
-                        <h4><i class="fas fa-graduation-cap"></i> Educación</h4>
-                        <p>La formación académica coincide en un ${data.education_match || 'N/A'}.</p>
-                    </div>
-                    <div class="match-factor">
-                        <h4><i class="fas fa-briefcase"></i> Experiencia</h4>
-                        <p>La experiencia laboral coincide en un ${data.experience_match || 'N/A'}.</p>
-                    </div>
-                    <div class="match-factor">
-                        <h4><i class="fas fa-tools"></i> Habilidades</h4>
-                        <p>Las habilidades técnicas coinciden en un ${data.skills_match || 'N/A'}.</p>
-                    </div>
-                </div>
             </div>
         `;
     }
