@@ -251,10 +251,15 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/model_info')
             .then(response => response.json())
             .then(data => {
-                modelType.textContent = data.model_type;
-                modelAccuracy.textContent = data.accuracy;
-                lastTrained.textContent = data.last_trained;
-                datasetSize.textContent = data.dataset_size;
+                if (data.success) {
+                    modelType.textContent = data.model_type;
+                    modelAccuracy.textContent = data.accuracy;
+                    lastTrained.textContent = data.last_trained;
+                    datasetSize.textContent = data.dataset_size;
+                } else {
+                    console.error('Error fetching model info:', data.error);
+                    alert('Error loading model information: ' + data.error);
+                }
                 modelInfoModal.classList.remove('hidden');
             })
             .catch(error => {
