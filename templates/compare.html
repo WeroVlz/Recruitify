@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitify - Comparador CV-Empleo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/compare.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider"></div>
+        </label>
+        <span class="theme-icon"><i class="fas fa-moon"></i></span>
+    </div>
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Company Logo" class="company-logo">
+            </div>
+            <h1><i class="fas fa-briefcase"></i> Recruitify</h1>
+            <p>Compara un CV con una oferta de empleo</p>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="{{ url_for('compare') }}" class="active"><i class="fas fa-exchange-alt"></i> Comparar</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="compare-section">
+            <div class="upload-containers">
+                <div class="upload-container cv-upload">
+                    <h2><i class="fas fa-file-alt"></i> CV</h2>
+                    <div id="cv-drop-area" class="drop-area">
+                        <form class="upload-form">
+                            <input type="file" id="cvFileElem" accept=".pdf">
+                            <label for="cvFileElem" class="button">
+                                <i class="fas fa-file-upload"></i> Seleccionar CV
+                            </label>
+                            <div class="drop-zone">
+                                <i class="fas fa-file-pdf"></i>
+                                <p>Arrastra y suelta el CV aquí (solo PDF)</p>
+                            </div>
+                        </form>
+                        <div id="cv-file-info" class="file-info hidden">
+                            <p><i class="fas fa-file-pdf"></i> <span id="cv-file-name"></span></p>
+                            <button id="remove-cv-file" class="remove-file"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="upload-container job-upload">
+                    <h2><i class="fas fa-briefcase"></i> Oferta de Empleo</h2>
+                    <div id="job-drop-area" class="drop-area">
+                        <form class="upload-form">
+                            <input type="file" id="jobFileElem" accept=".html,.htm,.txt">
+                            <label for="jobFileElem" class="button">
+                                <i class="fas fa-file-upload"></i> Seleccionar Oferta
+                            </label>
+                            <div class="drop-zone">
+                                <i class="fas fa-file-code"></i>
+                                <p>Arrastra y suelta la oferta aquí (HTML o TXT)</p>
+                            </div>
+                        </form>
+                        <div id="job-file-info" class="file-info hidden">
+                            <p><i class="fas fa-file-code"></i> <span id="job-file-name"></span></p>
+                            <button id="remove-job-file" class="remove-file"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="compare-btn" class="primary-button" disabled>
+                <i class="fas fa-exchange-alt"></i> Comparar CV y Oferta
+            </button>
+        </section>
+
+        <section id="results-section" class="hidden">
+            <h2>Resultado de la Comparación</h2>
+            <div class="loader hidden" id="loader">
+                <div class="spinner"></div>
+                <p>Analizando la compatibilidad con nuestro modelo de inteligencia artificial...</p>
+            </div>
+            <div id="comparison-result" class="comparison-result">
+                <!-- Results will be displayed here -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>SmartHire - Desarrollado por Edgar, Alberto y Jorge</p>
+            <button id="model-info-btn" class="text-button">
+                <i class="fas fa-info-circle"></i> Información del modelo
+            </button>
+        </div>
+    </footer>
+
+    <div id="model-info-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Información del modelo</h2>
+            <div id="model-info-content">
+                <p><i class="fas fa-robot"></i> <strong>Tipo de Modelo:</strong><span id="model-type"></span></p>
+                <p><i class="fas fa-chart-line"></i> <strong>Precisión:</strong><span id="model-accuracy"></span></p>
+                <p><i class="fas fa-calendar-alt"></i> <strong>Último entrenamiento:</strong><span id="last-trained"></span></p>
+                <p><i class="fas fa-database"></i> <strong>Tamaño Dataset:</strong><span id="dataset-size"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/compare.js') }}"></script>
+</body>
+</html>

@@ -27,6 +27,15 @@
         </div>
     </header>
 
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="active"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="{{ url_for('compare') }}"><i class="fas fa-exchange-alt"></i> Comparar</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <main class="container">
         <section class="upload-section">
             <div id="drop-area">
