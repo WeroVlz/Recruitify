@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showJobDetails(job) {
         // Create and show job details modal
         const jobModal = document.createElement('div');
-        jobModal.className = 'modal job-details-modal';
+        jobModal.className = 'modal';
         jobModal.id = 'job-details-modal';
         
         // Determine match level for styling
@@ -276,78 +276,48 @@ document.addEventListener('DOMContentLoaded', function() {
             matchClass = 'medium';
         }
         
-        // Create modal content with job ID and compatibility score in header
+        // Create modal content with job ID and raw HTML content in scrollable box
         jobModal.innerHTML = `
             <div class="modal-content job-details-content">
-                <div class="job-modal-header">
-                    <div class="job-modal-title">
-                        <h2>Job ID: ${job.job_id}</h2>
-                        <div class="match-pill match-${matchClass}">
-                            <i class="fas fa-percentage"></i> ${job.match_score}
-                        </div>
+                <span class="close">&times;</span>
+                <h2>ID: ${job.job_id}</h2>
+                <div class="job-match-info">
+                    <div class="match-indicator match-${matchClass}">
+                        <span class="match-value">${job.match_score}</span>
+                        <span class="match-label">Compatibilidad</span>
                     </div>
-                    <span class="close">&times;</span>
                 </div>
-                <div class="job-content-container">
-                    <div id="job-html-content" class="job-html-content">
-                        <div class="loader">
-                            <div class="spinner"></div>
-                            <p>Cargando contenido del trabajo...</p>
-                        </div>
+                <div class="job-description">
+                    <h3>Contenido HTML:</h3>
+                    <div class="html-content-box">
+                        <pre id="job-content-pre"></pre>
                     </div>
                 </div>
             </div>
         `;
-                
+        
         // Add to document
         document.body.appendChild(jobModal);
         
-        // Show modal with animation
-        setTimeout(() => {
-            jobModal.classList.add('show');
-        }, 10);
+        // Show modal
+        jobModal.classList.remove('hidden');
         
         // Add close functionality
         const closeBtn = jobModal.querySelector('.close');
         closeBtn.addEventListener('click', () => {
-            jobModal.classList.remove('show');
-            setTimeout(() => {
-                document.body.removeChild(jobModal);
-            }, 300);
+            document.body.removeChild(jobModal);
         });
         
         // Close when clicking outside
         window.addEventListener('click', (e) => {
             if (e.target === jobModal) {
-                jobModal.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(jobModal);
-                }, 300);
+                document.body.removeChild(jobModal);
             }
         });
         
-        // Load the HTML content from the results folder
-        const jobContentContainer = jobModal.querySelector('#job-html-content');
-        
-        // Simulate loading the content from the results folder
-        setTimeout(() => {
-            // Remove loader
-            jobContentContainer.querySelector('.loader').remove();
-            
-            // In a real implementation, this would fetch the HTML file from the results folder
-            // For demonstration, we'll create sample content based on the job ID
-            const jobContent = getJobContent(job.job_id);
-            
-            // Create a div to display the HTML content properly
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'job-content-div';
-            
-            // Set the HTML content directly
-            contentDiv.innerHTML = jobContent;
-            
-            // Add the content div to the container
-            jobContentContainer.appendChild(contentDiv);
-        }, 1000);
+        // Get the job content and add it to the pre element
+        const jobContent = getJobContent(job.job_id);
+        document.getElementById('job-content-pre').textContent = jobContent;
     }
     
     // Function to get job content based on job ID

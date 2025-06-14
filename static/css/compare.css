@@ -258,73 +258,75 @@
     opacity: 1;
 }
 
-.job-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-    margin-bottom: 1rem;
-    position: relative;
+.job-match-info {
+    margin: 1rem 0;
 }
 
-.job-modal-title {
-    display: flex;
+.match-indicator {
+    display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
-}
-
-.job-modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-.match-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 700;
     padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    border-radius: var(--border-radius);
+    background-color: rgba(16, 185, 129, 0.1);
 }
 
-.match-pill.match-high {
-    background-color: rgba(16, 185, 129, 0.15);
+.match-indicator.match-high {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid #10b981;
+}
+
+.match-indicator.match-medium {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-left: 4px solid #f59e0b;
+}
+
+.match-indicator.match-low {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid #ef4444;
+}
+
+.match-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.match-value.match-high {
     color: #10b981;
-    border: 2px solid #10b981;
 }
 
-.match-pill.match-medium {
-    background-color: rgba(245, 158, 11, 0.15);
+.match-value.match-medium {
     color: #f59e0b;
-    border: 2px solid #f59e0b;
 }
 
-.match-pill.match-low {
-    background-color: rgba(239, 68, 68, 0.15);
+.match-value.match-low {
     color: #ef4444;
-    border: 2px solid #ef4444;
 }
 
-.job-content-container {
-    flex: 1;
-    overflow: hidden;
-    margin-top: 1rem;
-    height: 70vh;
+.match-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
 }
 
-.job-html-content {
-    height: 100%;
+.job-description {
+    margin-top: 1.5rem;
+}
+
+.html-content-box {
+    max-height: 70vh;
     overflow-y: auto;
     background-color: var(--background-color);
     border-radius: var(--border-radius);
+    padding: 1rem;
     border: 1px solid var(--border-color);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 0;
+}
+
+.html-content-box pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
 }
 
 .job-content-div {
