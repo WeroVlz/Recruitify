@@ -167,8 +167,13 @@ def upload_cv():
 def job_details(job_id):
     """Return details for a specific job."""
     try:
-        # Get the job HTML file
-        job_path = Path(JOBS_DIR) / f"{job_id}.html"
+        # First try to get the job from the results folder
+        results_dir = Path("results")
+        job_path = results_dir / f"{job_id}.html"
+        
+        # If not found in results, try the JOBS_DIR
+        if not job_path.exists():
+            job_path = Path(JOBS_DIR) / f"{job_id}.html"
         
         if not job_path.exists():
             return jsonify({

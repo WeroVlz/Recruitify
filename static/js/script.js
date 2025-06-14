@@ -318,12 +318,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Get the job content and render it as HTML
-        const jobContent = getJobContent(job.job_id);
-        setTimeout(() => {
-            const contentContainer = document.getElementById('job-content-container');
-            contentContainer.innerHTML = jobContent;
-        }, 500);
+        // Fetch the job content from the server
+        fetch(`/job_details/${job.job_id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const contentContainer = document.getElementById('job-content-container');
+                if (data.success && data.raw_html) {
+                    contentContainer.innerHTML = data.raw_html;
+                } else {
+                    contentContainer.innerHTML = `<p>No content available for job ${job.job_id}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching job content:', error);
+                const contentContainer = document.getElementById('job-content-container');
+                contentContainer.innerHTML = `
+                    <div class="error-message">
+                        <p><i class="fas fa-exclamation-circle"></i> Error loading job content.</p>
+                        <p>Please try again later.</p>
+                    </div>
+                `;
+            });
     }
     
     // Function to get job content based on job ID
