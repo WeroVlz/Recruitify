@@ -71,10 +71,10 @@ def model_info():
         # Return model information
         return jsonify({
             'success': True,
-            'model_type': 'Random Forest',
+            'model_type': 'LLM Feature Extraction - Random Forest Classifier',
             'accuracy': '85%',
-            'last_trained': '2023-06-13',
-            'dataset_size': '50,000 CVs, 10,000 Jobs'
+            'last_trained': '2025-13-06',
+            'dataset_size': '170,000 CVs, 15,000 Jobs'
         })
     except Exception as e:
         logger.error(f"Error getting model info: {e}")
