@@ -78,8 +78,8 @@ def model_info():
             'success': True,
             'model_type': 'LLM - Random Forest',
             'accuracy': '85%',
-            'last_trained': '2025-06-13',
-            'dataset_size': '170,000 CVs, 15,000 Jobs'
+            'last_trained': '2025-06-11',
+            'dataset_size': '172,317 CVs, 15,650 Jobs'
         })
     except Exception as e:
         logger.error(f"Error getting model info: {e}")
