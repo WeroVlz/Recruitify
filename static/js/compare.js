@@ -212,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>El análisis muestra una compatibilidad del <span class="match-${matchClass}">${data.match_score}</span> entre el CV y la oferta de empleo.</p>
                 <p class="match-recommendation">
                     ${matchClass === 'high' ? 
-                        '<i class="fas fa-check-circle"></i> ¡Excelente coincidencia! Te recomendamos aplicar a esta oferta.' : 
-                        '<i class="fas fa-exclamation-triangle"></i> Baja coincidencia. Esta oferta no parece adecuada para tu perfil.'}
+                        '<i class="fas fa-check-circle"></i> ¡Excelente coincidencia! El aplicante parece ser adecuado para la oferta.' : 
+                        '<i class="fas fa-exclamation-triangle"></i> Baja coincidencia. Esta oferta no parece adecuada para el perfil seleccionado.'}
                 </p>
             </div>
         `;
