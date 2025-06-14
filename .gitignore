@@ -1,0 +1,10 @@
+.aider*
+.env
+psa-sabia-llm-dv-4329cd2ee0ae.json
+CV_Data/
+static/.DS_Store
+*.pkl
+*.pyc
+*.joblib
+.DS_Store
+predictions.csv
