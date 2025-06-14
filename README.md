@@ -57,7 +57,7 @@ pip install -r requirements.txt
 To train the model:
 
 ```bash
-python train.py --cv-dir CV_Data/cvs --jobs-dir CV_Data/jobs --applications-file CV_Data/applications.parquet
+python train.py
 ```
 
 Additional training options:
