@@ -284,14 +284,30 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background-color: rgba(16, 185, 129, 0.1);
-    color: #10b981;
     font-weight: 700;
     padding: 0.5rem 1rem;
     border-radius: 20px;
     font-size: 1rem;
-    border: 1px solid #10b981;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.match-pill.match-high {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 2px solid #10b981;
+}
+
+.match-pill.match-medium {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 2px solid #f59e0b;
+}
+
+.match-pill.match-low {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 2px solid #ef4444;
 }
 
 .job-content-container {

@@ -266,13 +266,23 @@ document.addEventListener('DOMContentLoaded', function() {
         jobModal.className = 'modal job-details-modal';
         jobModal.id = 'job-details-modal';
         
+        // Determine match level for styling
+        const matchPercentage = parseFloat(job.match_score);
+        let matchClass = 'low';
+        
+        if (matchPercentage >= 80) {
+            matchClass = 'high';
+        } else if (matchPercentage >= 60) {
+            matchClass = 'medium';
+        }
+        
         // Create modal content with job ID and compatibility score in header
         jobModal.innerHTML = `
             <div class="modal-content job-details-content">
                 <div class="job-modal-header">
                     <div class="job-modal-title">
                         <h2>Job ID: ${job.job_id}</h2>
-                        <div class="match-pill">
+                        <div class="match-pill match-${matchClass}">
                             <i class="fas fa-percentage"></i> ${job.match_score}
                         </div>
                     </div>
