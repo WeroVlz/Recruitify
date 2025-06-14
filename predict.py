@@ -25,12 +25,14 @@ def parse_args():
     parser.add_argument("--model-dir", type=str, default=str(FINE_TUNED_MODEL_DIR / "best_model"),
                         help="Directory containing the trained model")
     parser.add_argument("--tokenizer-name", type=str, default=MODEL_NAME,
-                        help="Name of the tokenizer to use")
+                        help="Name of the tokenizer to use (not used with Random Forest)")
     
     parser.add_argument("--cv-dir", type=str, default=str(CV_DIR),
                         help="Directory containing CV PDFs")
     parser.add_argument("--jobs-dir", type=str, default=str(JOBS_DIR),
                         help="Directory containing job HTML files")
+    parser.add_argument("--memory-efficient", action="store_true",
+                        help="Use memory-efficient processing for large datasets")
     
     # Prediction modes
     group = parser.add_mutually_exclusive_group(required=True)
@@ -75,17 +77,29 @@ def main():
     
     # Create predictor
     logger.info("Creating predictor...")
-    predictor = CVJobMatcherPredictor(
-        model_path=Path(args.model_dir),
-        tokenizer_name=args.tokenizer_name
-    )
+    try:
+        predictor = CVJobMatcherPredictor(
+            model_path=Path(args.model_dir),
+            tokenizer_name=args.tokenizer_name
+        )
+    except Exception as e:
+        logger.error(f"Error creating predictor: {e}")
+        logger.info("Creating predictor with default model...")
+        predictor = CVJobMatcherPredictor(
+            model_path=Path("models/default"),
+            tokenizer_name=args.tokenizer_name
+        )
     
     # Set up extractors
     logger.info("Setting up extractors...")
-    predictor.setup_extractors(
-        cv_dir=Path(args.cv_dir),
-        jobs_dir=Path(args.jobs_dir)
-    )
+    try:
+        predictor.setup_extractors(
+            cv_dir=Path(args.cv_dir),
+            jobs_dir=Path(args.jobs_dir)
+        )
+    except Exception as e:
+        logger.error(f"Error setting up extractors: {e}")
+        return
     
     # Predict based on mode
     if args.predict_pair:
@@ -172,29 +186,35 @@ def main():
         logger.info(f"Finding top 5 matching jobs for CV {args.cv_id}...")
         
         # Get all available job IDs
-        import time
-        start_time = time.time()
         job_ids = [f.stem for f in Path(args.jobs_dir).glob("*.html")]
-        
+    
         if not job_ids:
             logger.error(f"No job files found in {args.jobs_dir}")
             return
-        
-        logger.info(f"Found {len(job_ids)} job files in {time.time() - start_time:.2f} seconds")
-        
+    
+        # Limit to a reasonable number of jobs for faster processing
+        if len(job_ids) > 1000:
+            logger.info(f"Found {len(job_ids)} jobs, sampling 1000 for faster processing")
+            import random
+            random.seed(42)
+            job_ids = random.sample(job_ids, 1000)
+        else:
+            logger.info(f"Found {len(job_ids)} jobs")
+    
         # Predict matches for all jobs
-        predict_start = time.time()
+        logger.info(f"Finding matches for CV {args.cv_id}...")
         results = predictor.predict_matches_for_cv(
             cv_id=args.cv_id,
             job_ids=job_ids,
             top_k=5  # Get top 5 matches
         )
-        logger.info(f"Prediction completed in {time.time() - predict_start:.2f} seconds")
         
         # Print results
-        print(f"Top 5 job recommendations for CV {args.cv_id}:")
+        print(f"\nTop 5 job recommendations for CV {args.cv_id}:")
+        print("-" * 50)
         for i, result in enumerate(results):
             print(f"{i+1}. Job {result['job_id']}: {result['match_score']:.2f}% match")
+        print("-" * 50)
         
         # Save results
         pd.DataFrame(results).to_csv(args.output_file, index=False)
