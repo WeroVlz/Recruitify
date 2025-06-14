@@ -67,7 +67,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Theme switching is now handled by theme.js
+    // Theme switcher
+    function switchTheme(e) {
+        // Apply theme change in the next frame to avoid flickering
+        requestAnimationFrame(() => {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
+    // Check for saved theme preference
+    const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+    if (currentTheme) {
+        // Apply theme immediately on page load to avoid flash of wrong theme
+        document.documentElement.setAttribute('data-theme', currentTheme);
+
+        if (currentTheme === 'dark') {
+            toggleSwitch.checked = true;
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+    }
+
+    // Event listener for theme switch
+    toggleSwitch.addEventListener('change', switchTheme, false);
     
     function preventDefaults(e) {
         e.preventDefault();
