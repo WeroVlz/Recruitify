@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             matchClass = 'medium';
         }
         
-        // Create modal content with job ID and raw HTML content in scrollable box
+        // Create modal content with job ID and rendered HTML content in scrollable box
         jobModal.innerHTML = `
             <div class="modal-content job-details-content">
                 <span class="close">&times;</span>
@@ -288,9 +288,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="job-description">
-                    <h3>Contenido HTML:</h3>
-                    <div class="html-content-box">
-                        <pre id="job-content-pre"></pre>
+                    <h3>Contenido del Trabajo:</h3>
+                    <div class="html-content-box" id="job-content-container">
+                        <div class="loader">
+                            <div class="spinner"></div>
+                            <p>Cargando contenido del trabajo...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -315,9 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Get the job content and add it to the pre element
+        // Get the job content and render it as HTML
         const jobContent = getJobContent(job.job_id);
-        document.getElementById('job-content-pre').textContent = jobContent;
+        setTimeout(() => {
+            const contentContainer = document.getElementById('job-content-container');
+            contentContainer.innerHTML = jobContent;
+        }, 500);
     }
     
     // Function to get job content based on job ID

@@ -317,16 +317,49 @@
     overflow-y: auto;
     background-color: var(--background-color);
     border-radius: var(--border-radius);
-    padding: 1rem;
+    padding: 1.5rem;
     border: 1px solid var(--border-color);
 }
 
-.html-content-box pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-family: 'Inter', sans-serif;
+.html-content-box h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.html-content-box h2, .html-content-box h3 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.html-content-box p {
+    margin-bottom: 1rem;
     line-height: 1.6;
-    color: var(--text-color);
+}
+
+.html-content-box ul, .html-content-box ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.html-content-box li {
+    margin-bottom: 0.5rem;
+}
+
+.html-content-box a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.html-content-box a:hover {
+    text-decoration: underline;
+}
+
+[data-theme="dark"] .html-content-box a {
+    color: #60a5fa;
 }
 
 .job-content-div {
