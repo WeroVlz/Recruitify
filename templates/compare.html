@@ -119,28 +119,7 @@
         </div>
     </div>
 
-    <script>
-        // Check for saved theme preference or respect OS preference
-        const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
-        const currentTheme = localStorage.getItem("theme");
-        
-        // Apply the right theme on page load
-        if (currentTheme === "dark") {
-            document.documentElement.setAttribute("data-theme", "dark");
-            document.getElementById("checkbox").checked = true;
-            document.querySelector(".theme-icon i").classList.remove("fa-moon");
-            document.querySelector(".theme-icon i").classList.add("fa-sun");
-        } else if (currentTheme === "light") {
-            document.documentElement.setAttribute("data-theme", "light");
-            document.getElementById("checkbox").checked = false;
-        } else if (prefersDarkScheme.matches) {
-            document.documentElement.setAttribute("data-theme", "dark");
-            document.getElementById("checkbox").checked = true;
-            document.querySelector(".theme-icon i").classList.remove("fa-moon");
-            document.querySelector(".theme-icon i").classList.add("fa-sun");
-        }
-    </script>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/compare.js') }}"></script>
 </body>
 </html>
