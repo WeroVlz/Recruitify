@@ -163,15 +163,26 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Hardcoded job results with specified percentages
             const jobResults = [
-                { job_id: "57997", match_score: "92.34%" },
-                { job_id: "58018", match_score: "91.02%" },
-                { job_id: "58087", match_score: "90.87%" },
-                { job_id: "58125", match_score: "90.59%" },
-                { job_id: "58366", match_score: "87.34%" }
+                { job_id: "57997", match_score: "92.34%", html_content: loadJobHTML("57997") },
+                { job_id: "58018", match_score: "91.02%", html_content: loadJobHTML("58018") },
+                { job_id: "58087", match_score: "90.87%", html_content: loadJobHTML("58087") },
+                { job_id: "58125", match_score: "90.59%", html_content: loadJobHTML("58125") },
+                { job_id: "58366", match_score: "87.34%", html_content: loadJobHTML("58366") }
             ];
             
             displayJobMatches(jobResults);
         }, 1500); // 1.5 seconds loading time
+    }
+    
+    // Function to load HTML content for a job
+    function loadJobHTML(jobId) {
+        // This is a placeholder. In a real implementation, you would fetch the HTML from the server.
+        // For now, we'll return placeholder content
+        return `<div class="job-content">
+            <h2>Job ${jobId}</h2>
+            <p>This is the content for job ${jobId}.</p>
+            <p>In a real implementation, this would be the actual HTML content from the file.</p>
+        </div>`;
     }
     
     function displayJobMatches(recommendations) {
@@ -259,21 +270,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 jobModal.className = 'modal';
                 jobModal.id = 'job-details-modal';
                 
+                // Parse the match score to get the percentage value
+                const matchPercentage = parseFloat(job.match_score);
+                
                 // Create modal content with job ID and raw HTML content in scrollable box
                 jobModal.innerHTML = `
                     <div class="modal-content job-details-content">
                         <span class="close">&times;</span>
                         <h2>ID: ${job.job_id}</h2>
                         <div class="job-match-info">
-                            <div class="match-indicator match-${job.match >= 80 ? 'high' : job.match >= 60 ? 'medium' : 'low'}">
-                                <span class="match-value">${job.match}%</span>
+                            <div class="match-indicator match-high">
+                                <span class="match-value">${job.match_score}</span>
                                 <span class="match-label">Compatibilidad</span>
                             </div>
                         </div>
                         <div class="job-description">
                             <h3>Contenido HTML:</h3>
                             <div class="html-content-box">
-                                <pre>${data.raw_html || "HTML content not available"}</pre>
+                                <pre>${job.html_content || data.raw_html || "HTML content not available"}</pre>
                             </div>
                         </div>
                     </div>
