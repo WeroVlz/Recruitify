@@ -1,10 +1,10 @@
 # CV-Job Matching System
 
-A machine learning system for matching CVs with job postings in Spanish using transformer-based models.
+A machine learning system for matching CVs with job postings in Spanish using transformer-based models, with a web application interface.
 
 ## Overview
 
-This system processes CVs in PDF format and job postings in HTML format, extracts relevant information, and trains a model to predict matches between CVs and jobs. The system is specifically designed to handle Spanish language content.
+This system processes CVs in PDF format and job postings in HTML format, extracts relevant information, and trains a model to predict matches between CVs and jobs. The system is specifically designed to handle Spanish language content and includes a web interface for easy interaction.
 
 ## Features
 
@@ -14,6 +14,9 @@ This system processes CVs in PDF format and job postings in HTML format, extract
 - Training pipeline with evaluation metrics
 - Inference API for predicting matches
 - Support for batch processing
+- Web application for uploading CVs and job postings
+- Interactive comparison of CVs and job postings
+- Dark/light theme support
 
 ## Directory Structure
 
@@ -36,6 +39,14 @@ This system processes CVs in PDF format and job postings in HTML format, extract
 │   └── inference/      # Inference utilities
 │       └── predictor.py
 ├── models/             # Saved models
+├── static/             # Web application static files
+│   ├── css/            # Stylesheets
+│   ├── js/             # JavaScript files
+│   └── img/            # Images
+├── templates/          # HTML templates
+│   ├── index.html      # Main page
+│   └── compare.html    # CV-Job comparison page
+├── app.py              # Flask web application
 ├── train.py            # Training script
 ├── predict.py          # Prediction script
 └── requirements.txt    # Dependencies
@@ -91,6 +102,23 @@ To batch predict from a file:
 ```bash
 python predict.py --batch-predict --pairs-file pairs.csv --output-file results.csv
 ```
+
+### Web Application
+
+To run the web application:
+
+```bash
+python app.py
+```
+
+The web application provides:
+- Upload interface for CVs (PDF) and job postings (HTML/TXT)
+- Interactive comparison between CVs and job postings
+- Visual representation of match scores
+- Dark/light theme toggle
+- Responsive design for desktop and mobile devices
+
+Access the application at: http://localhost:8080
 
 ## Model Architecture
 
