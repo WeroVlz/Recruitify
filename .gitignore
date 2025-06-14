@@ -8,3 +8,4 @@ static/.DS_Store
 *.joblib
 .DS_Store
 predictions.csv
+results/
